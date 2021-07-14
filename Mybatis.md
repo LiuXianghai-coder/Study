@@ -142,4 +142,91 @@
   - 在 `Mapper.xml` 中加入 <cache> 标签
   - 将 <cache> 标签的 `type` 属性设置为自定义标签
 
+
+
+# MyBatis 组件
+
+1. `Executor`
+2. `StatementHandler`
+3. `PreparementHandler`
+4. `ResultSetHandler`
+
 # Mybatis 执行流程
+
+1. 首先在创建 `Session` 会将对应的 `Mybatis` 配置文件读入 `Configuration` 对象中，注册相关的 `Mapper.xml` 映射文件
+
+2. `getMapper` 的执行流程
+
+   - `DefaultSqlSession` 调用 `Configuration` 的 `getMapper`
+   - `MapRegister` 提供一个 `HashMap`， 保存对每个 `Mapper.xml` 的注册
+   - 通过对应的`Mapper.xml`生成对应的代理对象，该代理对象使用的是 JDK 的动态代理的方式
+
+   ![阶段1：获得Mapper动态代理阶段.jpg](https://i.loli.net/2021/07/04/tobpELi6GUF5JVR.png)
+
+   
+
+3.  `mapper`接口方法的执行
+
+   - 调用代理对象的 `invoke` 方法，被代理的方法所在的类
+
+     ```java
+     method = getUserById(2L);
+     declaringClass = mapper.UserMapper.class;
+     ```
+
+   - 如果得到的的 `declaringClass` 是 `java.lang.Object`，则调用 `Object` 的方法；如果 `method` 是 `defaultMethod` ， 那么调用 `defaultMethod`
+
+   - 如果以上两个条件都不满足，则会获取 `MapperMethod` 实例
+
+     - 如果缓存中存在对应的 `MapperMethod` 实例，则直接从缓存中获取
+
+     - 创建 `SqlCommand` 对象
+
+       - `SqlCommand` 只维护两个属性
+
+         ```java
+         // MappedStatement 的唯一标识 id
+         private final String name;
+         
+         // sql的命令类型 UNKNOWN, INSERT, UPDATE, DELETE, SELECT, FLUSH;
+         private final SqlCommandType type;
+         ```
+
+       - 拼装 `statementId`
+
+         > 如 `mapper.UserMapper.getUserById`
+
+         - 获取 `MappedStatement` 对象
+           - 以 `statementId` 为 `key`，查询 `Configuration` 配置对象内的 `Map<String, MappedStatement> mappedStatements `，如果对应的 `MappedStatement`，则直接返回该 `MappedStatement` 实例对象
+           - 如果 `Configuration` 对象不包含对象，则遍历 `Mapper` 接口类的方法，查询这些接口方法是否有对应的 `MappedStatement`， 如果有，则直接返回该实例对象，否则返回 `null`
+         - 得到 `SqlCommand` 对象
+           - 如果得到的 `MappedStatement` 不为 `null`，则可以从 `MappedStaement` 中得到对应的方法签名和该 `SQL` 的操作类型。
+           - 如果得到的 `MappedStatement` 为 `null`，则会检查对应的方法是否设置了 `@Flush` 注解，如果设置了 `@Flush` 注解，那么就会将方法全限定名设置为 `null`，`SQL` 执行类型为 `FLUSH`。
+           - 如果未设置 `@Flush` 注解，则会抛出 `BindingException` 异常
+
+     - 创建 `MethodSignature` 对象
+
+   - 将 `MapperMethod` 放入缓存
+
+   ![阶段2：获得MapperMethod对象.jpg](https://i.loli.net/2021/07/04/hObkAZe4E1WU7xi.png)
+
+   
+
+4. 选择合适的执行方法
+
+   - 按照传入的 `SqlCommand` 参数对象，选择相应的方法执行具体的方法
+   - 该执行采用的是命令模式
+
+   ![阶段3：根据SQL指令跳转执行语句.jpg](https://i.loli.net/2021/07/04/2T9VPpsCox57cdH.png)
+
+5. 具体执行（针对缓存的的处理）
+
+   ![阶段4：查询前的缓存处理.jpg](https://i.loli.net/2021/07/04/72cSsRnZVbykz6g.png)
+
+6. 具体数据库查询
+
+   ![阶段5：执行DB查询操作.jpg](https://i.loli.net/2021/07/04/mXfiRWPOG3poAxv.png)
+
+7. 对于结果进行封装
+
+   ![阶段6：针对ResultSet结果集转换为POJO.jpg](https://i.loli.net/2021/07/04/3P14OuiF7sVh92R.png)
