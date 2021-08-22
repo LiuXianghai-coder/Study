@@ -227,65 +227,293 @@
 
     - XML 文件配置
 
-    	- 对于服务提供者，一般的配置如下所示
+      - 对于服务提供者，一般的配置如下所示
 
-    		```xml
-    		<?xml version="1.0" encoding="UTF-8"?>
-    		
-    		<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    		       xmlns:dubbo="http://dubbo.apache.org/schema/dubbo"
-    		       xmlns="http://www.springframework.org/schema/beans"
-    		       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-    		       http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
-    		
-    		  	<!-- 服务提供者的名字 -->
-    		  	<dubbo:application name="demo-provider-xml"/>
-    		
-    		  	<!-- 注册中心的配置，这里以 Zookeeper 为例 -->
-    		    <dubbo:registry address="zookeeper://127.0.0.1:2181"/>
-    		
-    		  	<!-- 对应的传输协议 -->
-    		    <dubbo:protocol name="dubbo" port="20890"/>
-    		
-    		  	<!-- Bean 实例的配置 -->
-    		    <bean id="orderService" class="org.xhliu.dubboproviderxml.impl.OrderServiceImpl"/>
-    		
-    		    <dubbo:service interface="org.xhliu.dubbotest.service.OrderService" ref="orderService"/>
-    		
-    		  	<!-- 元数据，Dubbo 2.7 以上才有价值，可以使用其他的方式存储元数据，如 Redis -->
-    		<!--    <dubbo:metadata-report address="zookeeper://127.0.0.1:2181" />-->
-    		</beans>
-    		```
+      	```xml
+      	<?xml version="1.0" encoding="UTF-8"?>
+      	
+      	<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	       xmlns:dubbo="http://dubbo.apache.org/schema/dubbo"
+      	       xmlns="http://www.springframework.org/schema/beans"
+      	       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+      	       http://dubbo.apache.org/schema/dubbo http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
+      	
+      	  	<!-- 服务提供者的名字 -->
+      	  	<dubbo:application name="demo-provider-xml"/>
+      	
+      	  	<!-- 注册中心的配置，这里以 Zookeeper 为例 -->
+      	    <dubbo:registry address="zookeeper://127.0.0.1:2181"/>
+      	
+      	  	<!-- 对应的传输协议 -->
+      	    <dubbo:protocol name="dubbo" port="20890"/>
+      	
+      	  	<!-- Bean 实例的配置 -->
+      	    <bean id="orderService" class="org.xhliu.dubboproviderxml.impl.OrderServiceImpl"/>
+      	
+      	    <dubbo:service interface="org.xhliu.dubbotest.service.OrderService" ref="orderService"/>
+      	
+      	  	<!-- 元数据，Dubbo 2.7 以上才有价值，可以使用其他的方式存储元数据，如 Redis -->
+      	<!--    <dubbo:metadata-report address="zookeeper://127.0.0.1:2181" />-->
+      	</beans>
+      	```
 
-    	- 对于服务消费者，一般的配置如下所示
+      - 对于服务消费者，一般的配置如下所示
 
-    		```xml
-    		<?xml version="1.0" encoding="UTF-8"?>
-    		
-    		<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    		       xmlns:dubbo="http://dubbo.apache.org/schema/dubbo"
-    		       xmlns="http://www.springframework.org/schema/beans"
-    		       xsi:schemaLocation="http://www.springframework.org/schema/beans
-    		       http://www.springframework.org/schema/beans/spring-beans.xsd
-    		       http://dubbo.apache.org/schema/dubbo
-    		       http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
-    		  	<!-- 服务消费者的名字 -->
-    		    <dubbo:application name="demo-consumer"/>
-    		
-    		  	<!-- 注册中心的配置 -->
-    		    <dubbo:registry group="aaa" address="zookeeper://127.0.0.1:2181"/>
-    		
-    		  	<!-- 有关服务类的配置 -->
-    		    <dubbo:reference id="orderService" check="false"
-    		                     interface="org.xhliu.dubbotest.service.OrderService"/>
-    		</beans>
-    		```
+      	```xml
+      	<?xml version="1.0" encoding="UTF-8"?>
+      	
+      	<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	       xmlns:dubbo="http://dubbo.apache.org/schema/dubbo"
+      	       xmlns="http://www.springframework.org/schema/beans"
+      	       xsi:schemaLocation="http://www.springframework.org/schema/beans
+      	       http://www.springframework.org/schema/beans/spring-beans.xsd
+      	       http://dubbo.apache.org/schema/dubbo
+      	       http://dubbo.apache.org/schema/dubbo/dubbo.xsd">
+      	  	<!-- 服务消费者的名字 -->
+      	    <dubbo:application name="demo-consumer"/>
+      	
+      	  	<!-- 注册中心的配置 -->
+      	    <dubbo:registry group="aaa" address="zookeeper://127.0.0.1:2181"/>
+      	
+      	  	<!-- 有关服务类的配置 -->
+      	    <dubbo:reference id="orderService" check="false"
+      	                     interface="org.xhliu.dubbotest.service.OrderService"/>
+      	</beans>
+      	```
 
-    		
+      - 配置属性信息如下表所示：
+
+      | 标签                                                         | 用途         | 解释                                                         |
+      | ------------------------------------------------------------ | ------------ | ------------------------------------------------------------ |
+      | `<dubbo:service/>`                                           | 服务配置     | 用于暴露一个服务，定义服务的元信息，一个服务可以用多个协议暴露，一个服务也可以注册到多个注册中心 |
+      | `<dubbo:reference/>` [2](https://dubbo.apache.org/zh/docs/references/configuration/xml/#fn:2) | 引用配置     | 用于创建一个远程服务代理，一个引用可以指向多个注册中心       |
+      | `<dubbo:protocol/>`                                          | 协议配置     | 用于配置提供服务的协议信息，协议由提供方指定，消费方被动接受 |
+      | `<dubbo:application/>`                                       | 应用配置     | 用于配置当前应用信息，不管该应用是提供者还是消费者           |
+      | `<dubbo:module/>`                                            | 模块配置     | 用于配置当前模块信息，可选                                   |
+      | `<dubbo:registry/>`                                          | 注册中心配置 | 用于配置连接注册中心相关信息                                 |
+      | `<dubbo:monitor/>`                                           | 监控中心配置 | 用于配置连接监控中心相关信息，可选                           |
+      | `<dubbo:provider/>`                                          | 提供方配置   | 当 ProtocolConfig 和 ServiceConfig 某属性没有配置时，采用此缺省值，可选 |
+      | `<dubbo:consumer/>`                                          | 消费方配置   | 当 ReferenceConfig 某属性没有配置时，采用此缺省值，可选      |
+      | `<dubbo:method/>`                                            | 方法配置     | 用于 ServiceConfig 和 ReferenceConfig 指定方法级的配置信息   |
+      | `<dubbo:argument/>`                                          | 参数配置     | 用于指定方法参数配置                                         |
+
+      - 配置之间的对应关系
+
+        <img src="https://dubbo.apache.org/imgs/user/dubbo-config.jpg">
+
+      - 不同粒度配置的覆盖关系（以 timeout 属性为例）
+
+        1. 方法级优先，接口级次之，全局配置再次之
+        2. 如果级别一样，则消费方优先，提供方次之
+
+        ![dubbo-config-override](https://dubbo.apache.org/imgs/user/dubbo-config-override.jpg)
+
+      - 
 
     - Annotation配置
 
-  - 
+      - 服务提供者
 
-- 
+        配置属性
 
+        ```properties
+        # dubbo-provider.properties
+        dubbo.application.name=dubbo-annotation-provider
+        dubbo.registry.address=zookeeper://${zookeeper.address:127.0.0.1}:2181
+        dubbo.protocol.name=dubbo
+        dubbo.protocol.port=20880
+        dubbo.provider.token=true
+        ```
+
+        配置类
+
+        ```java
+        @Configuration
+        @EnableDubbo(scanBasePackages = "org.xhliu.dubboproviderannotation.service.impl")// 实现接口的类所在包
+        @PropertySource("classpath:/dubbo/dubbo-provider.properties")
+        public class ProviderConfiguration {
+            @Bean
+            public ProviderConfig providerConfig() {
+                ProviderConfig providerConfig = new ProviderConfig();
+                providerConfig.setTimeout(1000);
+                return providerConfig;
+            }
+        }
+        ```
+
+        服务实现类示例如下：
+
+        ```java
+        import lombok.extern.slf4j.Slf4j;
+        import org.apache.dubbo.config.annotation.DubboService;
+        import org.apache.dubbo.config.annotation.Method;
+        import org.apache.dubbo.rpc.RpcContext;
+        import org.xhliu.dubbotest.service.OrderService;
+        
+        @Slf4j
+        @DubboService(
+                version = "1.0.0", group = "test", timeout = 30000,
+                methods = {@Method(name = "doOrder", timeout = 5000)}
+        )
+        public class OrderServiceImpl implements OrderService {
+            @Override
+            public String doOrder(String info) {
+                log.info("Get Info: " + info);
+                return "Hello " + info + ", response from provider: " + RpcContext.getServerContext().getLocalAddress();
+            }
+        }
+        ```
+
+        
+
+      - 服务消费者
+
+        配置属性
+
+        ```properties
+        # dubbo-consumer.properties
+        dubbo.application.name=dubbo-annotation-consumer
+        dubbo.registry.address=zookeeper://${zookeeper.address:127.0.0.1}:2181
+        dubbo.consumer.timeout=1000
+        ```
+
+        配置类：与服务提供者的类似
+
+        对于 RPC 方法的调用，示例如下：
+
+        ```java
+        import lombok.extern.slf4j.Slf4j;
+        import org.apache.dubbo.config.annotation.DubboReference;
+        import org.springframework.stereotype.Service;
+        import org.xhliu.dubbotest.service.OrderService;
+        
+        @Slf4j
+        @Service(value = "orderServiceCall")
+        public class OrderServiceCall implements OrderService {
+            @DubboReference(group = "test", version = "1.0.0") // 对应方法所在的组、版本号
+            private OrderService orderService;
+        
+            @Override
+            public String doOrder(String info) { // 本地方法对于指定方法的实现，这里调用了 RPC 的方法
+                log.info("Consumer send Info: " + info);
+        
+                return orderService.doOrder(info);
+            }
+        }
+        ```
+
+- API 与 SPI
+
+  - API
+
+    > 应用程序接口
+
+  - SPI
+
+    > （Service Provider Interface）定义一组规范，要求调用方实现和扩展
+
+    - 应用场景
+
+      1. 数据库驱动 Driver等
+      2. 日志 log，如 `slf4j` 和 `log4j`
+      3. Spring Boot 自动装配规则
+
+    - JDK SPI 与 Dubbo SPI
+
+      > 区别：JDK SPI 文件格式不同，JDK 为 value 结构, Dubbo 为 Key-Value 结构；JDK SPI 会一次性全部加载，而 Dubbo 则是按需加载；因此可以使用 Dubbo 的 SPI 实现按需注入
+
+      ![image.png](https://i.loli.net/2021/08/22/5gONp4GAXenSTx8.png)
+
+      - 获取 JDK 的 SPI
+
+        ```java
+        import lombok.extern.slf4j.Slf4j;
+        import org.xhliu.dubbotest.service.OrderService;
+        
+        import java.util.ServiceLoader;
+        
+        @Slf4j
+        public class Application {
+            public static void main(String[] args) {
+                ServiceLoader<OrderService> orderServices = ServiceLoader.load(OrderService.class); // 加载对应的实现类，得到的是一个集合
+                log.info(orderServices.toString());
+                orderServices.forEach(orderService -> log.info(orderService.doOrder("Hello World!")));
+            }
+        }
+        ```
+
+      - 获取 Dubbo 的 SPI
+
+        Dubbo 的 SPI 配置文件示例：
+
+        ```
+        man1=dubbo.impl.Man // man1 的实现类为 dubbo.impl.Man
+        woman1=dubbo.impl.Woman // 同上
+        ```
+
+        
+
+        ```java
+        import dubbo.spi.Person;
+        import org.apache.dubbo.common.extension.ExtensionLoader;
+        
+        public class SpiTest {
+            public static void main(String[] args) {
+                ExtensionLoader<Person> personExtensionLoader = ExtensionLoader.getExtensionLoader(Person.class);
+                Person man = personExtensionLoader.getExtension("man1"); // 获取指定的实现类
+                man.say();
+            }
+        }
+        ```
+
+        
+
+- 线程派发模型
+
+  - 配置
+
+    ```xml
+    <dubbo:protocol name="dubbo" port="20880" threadpool="fixed" 
+                        threads="200" iothreads="8" accepts="0" queues="100" dispatcher="all">
+    ```
+
+    ![image.png](https://i.loli.net/2021/08/22/1fZHeCJAImWDa4u.png)
+
+    1. Boss 线程
+
+       > 接受客户端的连接，将接受到的连接注册到一个 Worker 线程上；
+       >
+       > 一般情况下，服务端每绑定一个端口，开启一个 Boss 线程
+
+    2. worker 线程
+
+       > 处理注册在其身上连接的 Connection 的各种 IO 事件；
+       >
+       > 一般情况下，Worker 线程的个数为计算机 CPU 的核心数 + 1；
+       >
+       > 一个 Worker 线程可以注册多个 Connection，但是一个 Connection 只能注册在一个 Worker 线程上
+
+  - 线程派发策略
+
+    1. All（默认）：将所有的消息都派发到线程池，包括请求、响应、连接事件、断开连接、心跳等。即 Worker 线程在收到事件之后，将该事件提交到业务线程池中，自己再去处理其他事。
+    2. direct: Worker 线程在接收到事件之后，由 Worker 线程执行到底（所有线程消息都不派送到线程池，全部在 IO 线程上直接执行）
+    3. message: 只有请求响应消息派发到线程池，其它连接断开事件、心跳等，直接在 IO 线程上执行
+    4. execution: 只有请求消息派发到线程池，不含响应（客户端线程池）；响应和其它连接断开事件、心跳等信息，直接在 IO 线程上执行
+    5. connection: 在 IO 线程上，将连接断开事件放入队列，有序逐个执行，其它消息派发到线程池。
+
+  - 常用的 ThreadPool
+
+    1. fixed: 固定大小线程池，启动时建立线程，不关闭，一直持有
+    2. cached: 缓存线程池，空闲一分钟自动删除，需要时再重新创建
+    3. limited: 可伸缩线程池，但是池中的线程数只会增长不会收缩。这是为了避免由于收缩时由于大流量引起的性能问题
+       1. eager : 优先创建 Worker 线程池，在任务数量大于 corePollSize 但是小于 maximumPollSize 时，优先创建 Worker 来处理任务。当任务数量大于 maxmumPollSize 时，将任务放入阻塞队列中。阻塞队列填满时抛出 RejectExecuption。（相比较于 cached，cached 在任务数量超过 maxmumPollSize 时直接抛出异常而不是将任务放入阻塞队列） 
+
+- Dubbo 线程模型图
+
+  ![image.png](https://i.loli.net/2021/08/22/H7TLh3mQVfnqlUZ.png)
+
+  - 整体步骤
+    1. 客户端的主线程发出一个请求后得到 future，在执行 get() 方法时阻塞；
+    2. 服务端使用 worker 线程（Netty 通信模型）接受到请求之后，将请求提交到 Server线程池中进行处理
+    3. Server 线程处理完成之后，将相应的处理结果返回给客户端的 Worker 线程池（Netty 通信模型），最后，Worker 线程将响应结果提交到 Client 线程池进行处理
+    4. client 线程将响应结果填充到 Future 中，然后唤醒等待的主线程，主线程获取结果，返回给客户端
