@@ -136,5 +136,3 @@
 - `spring-cloud-commons`的 `spring.factories`
 
   > `org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationAutoConfiguration`
-
-- 
