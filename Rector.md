@@ -52,9 +52,9 @@
    >
    >       ```java
    >       Flux<String> sequence = Flux.just("apple", "orange", "watermelon");
-   >                   
+   >                               
    >       Flux<String> seq2 = Flux.fromIterable(Arrays.asList("apple", "pair", "strawberry"));
-   >                   
+   >                               
    >       Flux<Integer> numbers = Flux.range(1, 5); // 从 1 开始取 5 个数作为处理元素
    >       ```
    >
@@ -66,7 +66,7 @@
    >
    >       ```java
    >       Mono<String> noData = Mono.empty(); // 创建的一个空的数据流
-   >                   
+   >                               
    >       Mono<String> data = Mono.just("Foo");
    >       ```
    >
@@ -129,26 +129,26 @@
    >             if (value.getClass() != Integer.class) {
    >                 throw new IllegalArgumentException("Class Object not equal....");
    >             }
-   >             
+   >                     
    >             Integer val = (Integer) value;
    >             if (val > 20) {
    >                 throw new RuntimeException("Go to 20");
    >             }
-   >             
+   >                     
    >             System.out.println("Value=" + value);
    >             request(1);
    >         }
-   >             
+   >                     
    >         @Override
    >         protected void hookOnComplete() {
    >             System.out.println("Subscribe Finished.....");
    >         }
-   >             
+   >                     
    >         @Override
    >         protected void hookOnError(Throwable throwable) {
    >             throw new RuntimeException("Runtime Exception......." + throwable.getLocalizedMessage());
    >         }
-   >             
+   >                     
    >         @Override
    >         public void hookOnSubscribe(Subscription subscription) {
    >             System.out.println("Subscriber.......");
