@@ -39,7 +39,7 @@
 >     public int get(int position)      // Reads an element from the given position (absolute get)
 >     public IntBuffer get(int[] dest)  // Relative bulk get into the destination array
 >     public IntBuffer get(int[] dest, int offset, int length)
->       
+>     
 >     public IntBuffer put(int element)                 // relative put (at current position)
 >     public IntBuffer put(int position, int element)   // absolute put
 >     public IntBuffer put(int[] source)                // relative bulk put
