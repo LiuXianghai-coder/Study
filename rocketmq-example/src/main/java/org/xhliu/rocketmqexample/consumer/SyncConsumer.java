@@ -12,7 +12,7 @@ import java.util.List;
 public class SyncConsumer {
     public static void main(String[] args) throws Throwable {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("lxh_consumer");
-        consumer.setNamesrvAddr("127.0.0.1:9876");
+        consumer.setNamesrvAddr("127.0.0.1:8848");
         consumer.subscribe(
                 "TopicTest",
                 "*"

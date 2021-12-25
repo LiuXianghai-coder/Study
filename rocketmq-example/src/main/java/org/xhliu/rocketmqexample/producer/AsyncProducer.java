@@ -15,7 +15,7 @@ public class AsyncProducer {
 
     public static void main(String[] args) throws Throwable {
         DefaultMQProducer producer = new DefaultMQProducer("lxh_producer");
-        producer.setNamesrvAddr("127.0.0.1:9876");
+        producer.setNamesrvAddr("127.0.0.1:8848");
         producer.start();
 
         Scanner sc = new Scanner(System.in);
