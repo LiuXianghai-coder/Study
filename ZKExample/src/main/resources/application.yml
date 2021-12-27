@@ -1,0 +1,9 @@
+server:
+  port: 8200
+
+curator:
+  retry-count: 5
+  sleep-between-retries: 30000
+  connect: 127.0.0.1:2181
+  session-timeout: 6000
+  connection-timeout: 5000
