@@ -3,12 +3,12 @@ server:
 spring:
   kafka:
     producer:
-      bootstrap-servers: 39.99.129.90:9092
       acks: 1
+      bootstrap-servers: 127.0.0.1:9092
       retries: 3
       buffer-memory: 33554432
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.xhliu.kafkaexample.serializer.MineSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       batch-size: 16384
       properties:
         # 提交延时，当 Producer 积累的消息达到 batch-size 或者接收到消息 linger.ms 后，生产者就会将消息提交给 Kafka
@@ -16,7 +16,7 @@ spring:
         linger.ms: 10
 
     consumer:
-      bootstrap-servers: 39.99.129.90:9092
+      bootstrap-servers: 127.0.0.1:9092
       group-id: xhliu-group1
       enable-auto-commit: true # 是否自动提交 offset
       auto-commit-interval: 100 # 提交 offset 的延时，即接受到消息多久之后提交 offset
@@ -26,7 +26,7 @@ spring:
       auto-offset-reset: earliest
       max-poll-records: 200 # 批量消费的最大消息的数量
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.xhliu.kafkaexample.serializer.MineDeSerializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         # 会话超时时间，如果 Consumer 超过这个时间没有发送心跳，就会出发 rebalance 操作
         session.timeout.ms: 120000

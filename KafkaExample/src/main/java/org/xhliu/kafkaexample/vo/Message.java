@@ -1,21 +1,18 @@
 package org.xhliu.kafkaexample.vo;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Message {
-    private int id;
-    private String body;
+    private final int id;
+    private final String body;
 
-    public Message(){}
-
-    public Message(int id, String body) {
+    @JsonCreator
+    public Message(
+            @JsonProperty("id") int id,
+            @JsonProperty("body") String body
+    ) {
         this.id = id;
-        this.body = body;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setBody(String body) {
         this.body = body;
     }
 

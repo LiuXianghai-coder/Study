@@ -1,5 +1,7 @@
 package org.xhliu.kafkaexample;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.kafka.clients.consumer.*;
@@ -176,5 +178,18 @@ class KafkaExampleApplicationTests {
 
             Thread.sleep(2000);
         }
+    }
+
+    @Resource
+    private ObjectMapper mapper;
+
+    @Test
+    void testDeSerializer() throws JsonProcessingException {
+        Message message = new Message(1, "This is a Message");
+        String json = mapper.writer().writeValueAsString(message);
+        System.out.println(json);
+
+        Message value = mapper.readValue(json, Message.class);
+        log.info("result={}", value);
     }
 }
