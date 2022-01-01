@@ -18,6 +18,7 @@
 
     <properties>
         <java.version>11</java.version>
+        <protobuf.version>3.19.1</protobuf.version>
     </properties>
 
     <dependencies>
@@ -35,6 +36,12 @@
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
         </dependency>
 
         <dependency>

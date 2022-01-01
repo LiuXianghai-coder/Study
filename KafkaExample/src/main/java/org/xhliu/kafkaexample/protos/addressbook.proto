@@ -1,0 +1,46 @@
+// 使用的 proto 语法的版本
+syntax="proto2";
+
+// 如果没有指定 java_package，那么将这个包位置作为生成类的目的包
+package org.xhliu.proto.entity;
+
+// 确保能够为每个类生成独立的 .java 文件而不是单个的 .java 文件
+option java_multiple_files = true;
+// 生成的目标类所在的包
+option java_package = "org.xhliu.proto.entity";
+// 定义生成的类的名字
+option java_outer_classname = "AddressBookProtos";
+
+// 简单的理解： message 和 class 关键字是对应的
+message Person {
+  /*
+    对于属性的修饰：
+      optional 表示这个字段可能被设置属性，也可能不会设置属性
+      repeated 表示这个字段可能被设置多次，和数组是相对应的
+      required 表示这个字段必须被设置值，否则将会抛出 RuntimeException
+  */
+  optional string name = 1;
+  optional int32 id = 2;
+  optional string email = 3;
+
+  // 相当于在类中定义了一个枚举类
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  // 相当于定义了一个内部类
+  message PhoneNumber {
+    optional string number = 1;
+    // type 属性默认为 HOME
+    optional PhoneType type = 2 [default = HOME];
+  }
+
+  repeated PhoneNumber phones = 4;
+}
+
+// 再定义了一个类，其中包含 Person 类型的属性
+message AddressBook {
+  repeated Person people = 1;
+}
