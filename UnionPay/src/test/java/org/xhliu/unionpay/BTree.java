@@ -187,7 +187,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
                 return delete(cur, cur.children[cur.m].next, key, h + 1);
 
             // 删除内部节点元素
-            Entry min = min(cur);
+            Entry min = min(cur.children[idx].next);
             cur.children[idx].key = min.key;
             cur.children[idx].value = min.value;
 
@@ -404,6 +404,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
         st.delete(5);
         st.delete(4);
         st.delete(12);
+        st.delete(10);
 
         System.out.println("size: " + st.size());
         System.out.println("height: " + st.height());
