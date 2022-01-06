@@ -3,8 +3,21 @@ package org.xhliu.kafkaexample;
 public class BTree<Key extends Comparable<Key>, Value> {
     private final int M;
 
+    /**
+     * 该类表示树的节点，每个节点包含对应的元素列表
+     */
     static final class Node {
-        private int m;
+        private int m; // 当前有效元素的数量
+        /**
+         * 元素的存储容器，按照 B 树的定义，这个容器中的元素应当是有序的
+         * 注意：这里的容器通过数组来实现，这里的数据的实际有效元素从 1 开始计数，这是为了预留一个哨兵
+         * 位置使得能够获取到最左边的节点的元素区间
+         * <br />
+         * <img src="https://s2.loli.net/2022/01/06/e39N4ruwRQHdyB7.jpg" />
+         * <br />
+         * 每个节点在创建时都会首先实例化哨兵元素，元素列表的大小为 M + 1，
+         * 这是因为在处理的过程中允许节点的元素暂时地溢出 M - 1 的上限
+         */
         private final Entry[] children;
 
         private Node(int m, int M) {
@@ -14,6 +27,14 @@ public class BTree<Key extends Comparable<Key>, Value> {
         }
     }
 
+    /**
+     * 具体存储键值对的对象，每个对象包含三个属性：key、value 和 next
+     * value 存储的是具体的数据，可以某个文件块的位置、或者是某个网页的地址等等
+     * <p>
+     * 这里是只是使用 next 而不是使用传统的树的左右孩子节点的原因在于：<br />
+     * 1. 引入左右孩子节点在这里是多余的，使用一个 next 指针完全是足够的 <br />
+     * 2. 使用左右孩子节点可能会导致链接混乱
+     */
     static class Entry {
         private Comparable key;
         private Object value;
@@ -26,13 +47,22 @@ public class BTree<Key extends Comparable<Key>, Value> {
         }
     }
 
-    private Node root;
+    private Node root; // B- 的根节点
 
-    private int height;
+    private int height; // 当前树的高度，有些操作必须依赖于树的高度来进行
 
-    private int size;
+    private int size; // 当前树中元素的个数
 
     public BTree(int m) {
+        /*
+            这里强制阶数 M 只能为奇数，不同的参考文档对于 B 树的定义不一致，有的认为
+            B 树的每个节点的最大元素个数可以达到 M，但是一般认为每个节点最多只能有 M - 1 的元素
+
+            如果每个节点最多只能有 M - 1 个元素，那么当 M 是偶数的时候，当两个节点合并时
+            ，将会突破 M - 1上限，而如果将 M 设置为奇数的话，最终会留下多余一个元素，从而满足条件
+
+            同时，将 M 强制设置为奇数，对于实现来讲更加简单
+         */
         if (m % 2 == 0) {
             throw new IllegalArgumentException("阶数 M 只能是奇数");
         }
@@ -49,6 +79,12 @@ public class BTree<Key extends Comparable<Key>, Value> {
         return this.height;
     }
 
+    /**
+     * 提供给客户端的 API，通过传入的 key 查找对应的 Value
+     *
+     * @param key : 待搜索的 key
+     * @return : 如果能够查找到 key，那么直接返回对应的 value，否则返回 null
+     */
     public Value get(Key key) {
         if (key == null) {
             throw new IllegalArgumentException("key 不能为 null");
@@ -57,24 +93,38 @@ public class BTree<Key extends Comparable<Key>, Value> {
         return search(root, key);
     }
 
+    /**
+     * 一般常规化的搜索，如果在当前的搜索节点 x 查找到了指定的 key，则直接返回当前元素对应的 value
+     * <br />
+     * 如果无法再当前节点搜索到元素 key，那么将在对应的区间向下递归地进行搜索
+     *
+     * @param x   ：当前待搜索的节点 x
+     * @param key ：待查找的 key
+     * @return ：查找到的 key 所对应的 value，如果该树不包含该 key，则返回 null
+     */
     @SuppressWarnings("unchecked")
     public Value search(Node x, Key key) {
         if (x == null) return null;
-
         Entry[] entries = x.children;
         for (int i = 1; i <= x.m; ++i) {
             if (eq(entries[i].key, key))
                 return (Value) entries[i].value;
-        }
 
-        for (int i = 1; i <= x.m; ++i) {
             if (less(entries[i - 1].key, key) && less(key, entries[i].key))
                 return search(entries[i - 1].next, key);
         }
 
+        // 尝试搜索最后一个节点的后一个区间
         return search(entries[x.m].next, key);
     }
 
+    /**
+     * 将对应的键值对 key-value 插入到树中，如果树中已经存在了 key，
+     * 那么将使用这个键值对覆盖树中原有的键值对
+     *
+     * @param key : 键值对对应的 key
+     * @param value : 键值对对应的 value
+     */
     public void put(Key key, Value value) {
         if (key == null) {
             throw new IllegalArgumentException("argument key fot put() is null");
@@ -82,28 +132,51 @@ public class BTree<Key extends Comparable<Key>, Value> {
 
         Node res = insert(root, key, value, 0);
         size++;
+
         if (res == null) return;
+        /*
+            插入之后形成了分裂节点，此时树的高度增加，同时需要修改 root 节点指向的对象
+         */
         root = res;
         height++;
     }
 
+    /**
+     * 在指定的一个节点中插入对应的键值对，首先会递归向下查找，在叶子节点中执行插入操作
+     * 当插入之后可能会导致节点中元素个数 “溢出”，此时需要对该节点进行重平衡以维护节点
+     * 的平衡性，重平衡之后可能也会使得父节点不再满足条件，因此同样地也需要对父节点进行
+     * 重平衡，直到满足条件或者到达根节点
+     *
+     * @param x : 当前插入的目标节点
+     * @param key : 待插入的键值对的 key
+     * @param value : 待插入键值对的 value
+     * @param h : 当前节点所在的树的高度，如果 h 达到了树的高度，说明已经到达了叶子节点
+     * @return : 插入成功之后，如果重平衡了节点，那么返回重平衡之后的根节点；否则，返回 null
+     */
     @SuppressWarnings("unchecked")
     private Node insert(Node x, Key key, Value value, int h) {
         int idx;
         Entry t = new Entry(key, value, null);
         Entry[] entries = x.children;
+        // 已经到达了叶子节点，直接进行插入
         if (h == height) {
             for (idx = 1; idx <= x.m; ++idx) {
+                // 键值对已经存在，使用当前的键值对覆盖原有的键值对
                 if (eq(key, entries[idx].key)) {
                     entries[idx].value = value;
                     size--;
                     return null;
                 }
 
+                /*
+                    找到待插入的位置，如果小于中间的某个节点说明插入位置在中间，
+                    否则将会插入到该节点元素列表的末尾
+                 */
                 if (less(key, entries[idx].key)) break;
             }
         } else {
             for (idx = 1; idx <= x.m; ++idx) {
+                // 如果 key 对应当前节点中的某个元素，则替换掉它
                 if (eq(key, entries[idx].key)) {
                     entries[idx].value = value;
                     size--;
@@ -111,18 +184,32 @@ public class BTree<Key extends Comparable<Key>, Value> {
                 }
 
                 if (less(entries[idx].key, key)) continue;
-
+                // 插入到前一个区间元素中，因为此时的元素已经大于现有的 key 了
                 Node u = insert(entries[idx - 1].next, key, value, h + 1);
+                // 插入结果为 null 说明没有发生节点分裂，正常返回即可
                 if (u == null) return null;
 
+                /*
+                    由于此时发生了节点分裂，需要将分裂后的节点的根节点插入到当前的节点中，
+                    首先需要找到根节点的插入位置
+                */
                 for (idx = 1; idx <= x.m; ++idx)
-                    if (less(u.children[1].key, x.children[idx].key)) break;
+                    if (less(u.children[1].key, entries[idx].key)) break;
 
-                x.children[idx - 1].next = u.children[0].next;
-                t = u.children[1];
+                /*
+                    分裂后的节点将通过一个根节点和两个子节点的形式返回，为了调整这个根节点，应当将根节点的元素插入到
+                    当前节点，首先需要将根节点的左区间链接放入到插入的位置的节点
+
+                    idx 表示第一个大于分裂的根节点的位置，因此需要调整的是前面的区间链接节点
+                 */
+                entries[idx - 1].next = u.children[0].next;
+                t = u.children[1]; // t 表示待插入的节点
                 break;
             }
 
+            /*
+                idx > m 表示插入的位置在当前节点的元素列表的末尾，这种情况需要做额外的处理
+             */
             if (idx > x.m) {
                 Node u = insert(entries[x.m].next, key, value, h + 1);
                 if (u == null) return null;
@@ -146,7 +233,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
 
     public Entry delete(Key key) {
         Entry entry = delete(null, root, key, 0);
-        size--;
+        if (entry != null) size--;
 
         return entry;
     }
@@ -168,9 +255,6 @@ public class BTree<Key extends Comparable<Key>, Value> {
             if (cur.m + 1 - idx >= 0)
                 System.arraycopy(cur.children, idx + 1, cur.children, idx, cur.m + 1 - idx);
             cur.m--;
-
-            // 如果删除节点之后该节点不满足条件，需要对该节点进行重平衡
-            if (cur.m < M / 2) reBalance(parent, cur);
         } else {
             /*
                 待删除的节点不是叶子节点，那么需要从元素的所有后继节点中找到最小的元素（或者从前驱节点中找到最大的元素）
@@ -179,27 +263,38 @@ public class BTree<Key extends Comparable<Key>, Value> {
             for (idx = 1; idx <= cur.m; ++idx) {
                 if (eq(cur.children[idx].key, key)) break;
                 // 当前节点在该节点的后继节点中，递归进行删除
-                if (less(key, cur.children[idx].key))
-                    return delete(cur, cur.children[idx - 1].next, key, h + 1);
+                if (less(key, cur.children[idx].key)) {
+                    entry = delete(cur, cur.children[idx - 1].next, key, h + 1);
+                    if (cur.m < M / 2) reBalance(parent, cur, h);
+                    return entry;
+                }
             }
 
             // idx > cur.m 说明待删除的节点在最后的一个区间内，同样地，通过递归的方式进行删除
-            if (idx > cur.m)
-                return delete(cur, cur.children[cur.m].next, key, h + 1);
+            if (idx > cur.m) {
+                entry = delete(cur, cur.children[cur.m].next, key, h + 1);
+                if (cur.m < M / 2) reBalance(parent, cur, h);
+                return entry;
+            }
 
             // 删除内部节点元素
             Entry min = min(cur);
             cur.children[idx].key = min.key;
             cur.children[idx].value = min.value;
 
-            return delete(cur, cur.children[idx].next, (Key) min.key, h + 1);
+            entry = delete(cur, cur.children[idx].next, (Key) min.key, h + 1);
         }
+
+        // 如果删除节点之后该节点不满足条件，需要对该节点进行重平衡
+        if (cur.m < M / 2) reBalance(parent, cur, h);
 
         return entry;
     }
 
     @SuppressWarnings("unchecked")
-    private void reBalance(Node parent, Node cur) {
+    private void reBalance(Node parent, Node cur, int h) {
+        // parent 为 null 表示当前处理的节点是 root 节点，root 节点不需要重平衡
+        if (parent == null) return;
         int idx;
         Entry[] children = parent.children;
         for (idx = 1; idx <= parent.m; ++idx)
@@ -229,6 +324,8 @@ public class BTree<Key extends Comparable<Key>, Value> {
             // 复制属性到当前节点的第一个元素（从 1 开始计数）
             cur.children[1].key = children[idx].key;
             cur.children[1].value = children[idx].value;
+            cur.children[1].next = cur.children[0].next;
+            cur.children[0].next = left.children[left.m].next;
             cur.m++;
 
             // 将从左子节点借用到的元素的属性复制到父节点的分隔元素，使得树最终是有序的
@@ -254,6 +351,8 @@ public class BTree<Key extends Comparable<Key>, Value> {
             // 单纯地复制属性到当前的节点，如果使用引用复制的话会导致出现冗余的链接，甚至出现环
             cur.children[cur.m].key = children[idx + 1].key;
             cur.children[cur.m].value = children[idx + 1].value;
+            cur.children[cur.m].next = right.children[0].next;
+            right.children[0].next = right.children[1].next;
 
             // 更新父节点的分隔元素
             children[idx + 1].key = right.children[1].key;
@@ -278,7 +377,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
 
             left.children[left.m].key = children[idx].key;
             left.children[left.m].value = children[idx].value;
-            ++left.m;
+            left.children[left.m].next = cur.children[0].next;
             // 复制父节点的分隔节点结束。。。。
 
             // 再将当前节点的所有元素复制到左兄弟节点，由于位置 0 是一个哨兵元素，因此从元素 1 开始进行复制
@@ -290,18 +389,20 @@ public class BTree<Key extends Comparable<Key>, Value> {
             // 删除父节点的分隔元素之后，移动父节点的分隔元素列表，使得原有的父节点的元素依旧是有序的
             if (parent.m + 1 - idx >= 0)
                 System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
+            parent.m--;
             return;
         }
 
         /*
             由于不存在左兄弟节点，因此只能选择右边的兄弟节点，将右兄弟节点的元素复制到当前节点
-            Hint：根据 B 树的定义，不可能存在既不含有左兄弟节点，也不含有右兄弟节点的叶子节点
+            Hint：根据 B 树的定义，不可能存在既不含有左兄弟节点，也不含有右兄弟节点的节点
          */
         ++cur.m;
         if (cur.children[cur.m] == null)
             cur.children[cur.m] = new Entry(null, null, null);
         cur.children[cur.m].key = children[idx + 1].key;
-        cur.children[cur.m].value= children[idx + 1].value;
+        cur.children[cur.m].value = children[idx + 1].value;
+        cur.children[cur.m].next = right.children[0].next;
         children[idx + 1].next = null;
 
         for (int i = 1; i <= right.m; ++i)
@@ -310,6 +411,11 @@ public class BTree<Key extends Comparable<Key>, Value> {
         if (parent.m + 1 - (idx + 1) >= 0)
             System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
         parent.m--; // 这里又有一个坑 :(
+
+        if (parent.m == 0 && h == 1) {
+            root = cur;
+            height--;
+        }
     }
 
     private Entry min(Node x) {
@@ -330,6 +436,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
 
         Node p = new Node(1, M);
         Entry mid = x.children[M / 2 + 1];
+        t.children[0].next = mid.next;
         x.children[M / 2 + 1] = null; // clear mid
         p.children[0].next = x;
         p.children[1] = new Entry(mid.key, mid.value, t);
@@ -376,24 +483,46 @@ public class BTree<Key extends Comparable<Key>, Value> {
     }
 
     public static void main(String[] args) {
-        BTree<Integer, Integer> st = new BTree<>(5);
+        BTree<String, String> st = new BTree<>(5);
 
-        for (int i = 1; i <= 22; ++i)
-            st.put(i, i);
+        st.put("www.cs.princeton.edu", "128.112.136.12");
+        st.put("www.cs.princeton.edu", "128.112.136.11");
+        st.put("www.princeton.edu", "128.112.128.15");
+        st.put("www.yale.edu", "130.132.143.21");
+        st.put("www.simpsons.com", "209.052.165.60");
+        st.put("www.apple.com", "17.112.152.32");
+        st.put("www.amazon.com", "207.171.182.16");
+        st.put("www.ebay.com", "66.135.192.87");
+        st.put("www.cnn.com", "64.236.16.20");
+        st.put("www.google.com", "216.239.41.99");
+        st.put("www.nytimes.com", "199.239.136.200");
+        st.put("www.microsoft.com", "207.126.99.140");
+        st.put("www.dell.com", "143.166.224.230");
+        st.put("www.slashdot.org", "66.35.250.151");
+        st.put("www.espn.com", "199.181.135.201");
+        st.put("www.weather.com", "63.111.66.11");
+        st.put("www.yahoo.com", "216.109.118.65");
 
-        System.out.println("size: " + st.size());
-        System.out.println("height: " + st.height());
+
+        System.out.println("cs.princeton.edu:  " + st.get("www.cs.princeton.edu"));
+        System.out.println("hardvardsucks.com: " + st.get("www.harvardsucks.com"));
+        System.out.println("simpsons.com:      " + st.get("www.simpsons.com"));
+        System.out.println("apple.com:         " + st.get("www.apple.com"));
+        System.out.println("ebay.com:          " + st.get("www.ebay.com"));
+        System.out.println("dell.com:          " + st.get("www.dell.com"));
+        System.out.println();
+
+        System.out.println("size:    " + st.size());
+        System.out.println("height:  " + st.height());
         System.out.println(st);
         System.out.println();
 
-        st.delete(1);
-        st.delete(6);
-        st.delete(5);
-        st.delete(4);
-
-        System.out.println("size: " + st.size());
-        System.out.println("height: " + st.height());
-        System.out.println(st);
+        BTree<Integer, Integer> bTree = new BTree<>(7);
+        for (int i = 0; i < 31; ++i)
+            bTree.put(i, i);
+        System.out.println("B-Tree size  :   " + bTree.size());
+        System.out.println("B-Tres height:   " + bTree.height());
+        System.out.println(bTree);
         System.out.println();
     }
 }
