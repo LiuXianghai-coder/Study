@@ -100,6 +100,17 @@ public class BPlusTree<K extends Comparable<K>, V> {
         height++;
     }
 
+    public Entry delete(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("待删除的 key 不能为 null");
+        }
+
+        Entry entry = delete(null, root, key, 0);
+        if (entry != null) size--;
+
+        return entry;
+    }
+
     private Node insert(Node x, K key, V val, int h) {
         int idx;
         Entry t = new Entry(key, val, null);
@@ -107,13 +118,11 @@ public class BPlusTree<K extends Comparable<K>, V> {
 
         if (h == height) {
             for (idx = 1; idx <= x.m; ++idx) {
-                // 键值对已经存在，使用当前的键值对覆盖原有的键值对
-                if (eq(key, entries[idx].key)) {
+                if (eq(entries[idx].key, key)) {
                     entries[idx].val = val;
                     size--;
                     return null;
                 }
-
                 if (less(key, entries[idx].key)) break;
             }
         } else {
@@ -145,33 +154,236 @@ public class BPlusTree<K extends Comparable<K>, V> {
         x.m++;
 
         if (x.m < M) return null;
-        return split(x);
+        if (h == height) return splitLeaf(x);
+        return splitIndex(x);
     }
 
-    private Node split(Node x) {
+    private Entry delete(Node parent, Node cur, K key, int h) {
+        Entry entry;
+        int idx;
+
+        if (h == height) {
+            for (idx = 1; idx <= cur.m; ++idx)
+                if (eq(cur.children[idx].key, key)) break;
+
+            // 如果当前叶子节点不存在这样的键值对元素，则跳过
+            if (idx > cur.m) return null;
+            entry = cur.children[idx];
+
+            // 移动节点元素列表，删除元素
+            if (cur.m + 1 - idx >= 0)
+                System.arraycopy(cur.children, idx + 1, cur.children, idx, cur.m + 1 - idx);
+            cur.m--;
+        } else {
+            for (idx = 1; idx <= cur.m; ++idx) {
+                if (eq(cur.children[idx].key, key)) {
+                    entry = delete(cur, cur.children[idx].next, key, h + 1);
+                    if (cur.m < M / 2) reBalance(parent, cur, h);
+                    return entry;
+                }
+
+                // 当前节点在该节点的后继节点中，递归进行删除
+                if (less(key, cur.children[idx].key)) {
+                    entry = delete(cur, cur.children[idx - 1].next, key, h + 1);
+                    if (cur.m < M / 2) reBalance(parent, cur, h);
+                    return entry;
+                }
+            }
+
+            entry = delete(cur, cur.children[cur.m].next, key, h + 1);
+        }
+
+        if (cur.m < M / 2) reBalance(parent, cur, h);
+        return entry;
+    }
+
+    private Node splitIndex(Node x) {
         Node t = new Node(M / 2, M);
-        x.m = M / 2 + 1;
+        x.m = M / 2;
+
+        Entry mid = x.children[M / 2 + 1];
 
         // 将 x 中的后半部分的节点放入 t 中
-        if (M / 2 >= 0)
-            System.arraycopy(x.children, 1, t.children, 1, M / 2);
-
         for (int i = 1; i <= M / 2; ++i) {
-            x.children[i] = x.children[M / 2 + i + 1];
+            t.children[i] = x.children[M / 2 + i + 1];
             x.children[M / 2 + i + 1] = null;
         }
 
         Node p = new Node(1, M); // 分裂后形成的根节点
-        Entry mid = x.children[M / 2 + 1]; // x 的中间节点，它的属性将会被作为根节点的属性
 
         // 调整相关的链接
-        p.children[0].next = t;
-        p.children[1] = new Entry(mid.key, null, x);
-
-        x.prev = t;
-        t.suc = x;
+        t.children[0].next = mid.next;
+        x.children[M / 2 + 1] = null; // clear mid
+        p.children[0].next = x;
+        p.children[1] = new Entry(mid.key, mid.val, t);
 
         return p;
+    }
+
+    private Node splitLeaf(Node x) {
+        Node t = new Node(M / 2 + 1, M);
+        x.m = M / 2;
+
+        Entry mid = x.children[M / 2 + 1]; // x 的中间节点，它的属性将会被作为根节点的属性
+
+        // 将 x 中的后半部分的节点放入 t 中
+        for (int i = 1; i <= M / 2 + 1; ++i) {
+            t.children[i] = x.children[M / 2 + i];
+            x.children[M / 2 + i] = null;
+        }
+
+        Node p = new Node(1, M); // 分裂后形成的根节点
+
+        // 调整相关的链接
+        p.children[0].next = x;
+        p.children[1] = new Entry(mid.key, null, t);
+
+        t.prev = x;
+        x.suc = t;
+
+        return p;
+    }
+
+    private void reBalance(Node parent, Node cur, int h) {
+        if (parent == null) return;
+
+        int idx;
+        Entry[] children = parent.children;
+
+        for (idx = 1; idx <= parent.m; ++idx)
+            if (less(cur.children[cur.m].key, children[idx].key))
+                break;
+        idx -= 1;
+
+        Node left = null, right = null;
+        if (idx > 0) left = children[idx - 1].next;
+        if (idx < parent.m) right = children[idx + 1].next;
+
+        if (left == null && right == null) return;
+
+        if (left != null && left.m > M / 2) {
+            // 移动当前节点的元素，为新加入的元素腾出位置
+            for (int i = cur.m + 1; i > idx; --i) {
+                if (cur.children[i] == null)
+                    cur.children[i] = new Entry(null, null, null);
+                cur.children[i].key = cur.children[i - 1].key;
+                cur.children[i].val = cur.children[i - 1].val;
+            }
+
+            // 复制属性到当前节点的第一个元素（从 1 开始计数）
+            cur.children[1].key = children[idx].key;
+            cur.children[1].val = children[idx].val;
+            cur.children[1].next = cur.children[0].next;
+            cur.children[0].next = left.children[left.m].next;
+            cur.m++;
+
+            // 将从左子节点借用到的元素的属性复制到父节点的分隔元素，使得树最终是有序的
+            children[idx].key = left.children[left.m].key;
+            children[idx].val = left.children[left.m].val;
+
+            // 删除左子节点的最大元素
+            left.children[left.m] = null;
+            left.m--;
+            return;
+        }
+
+        if (right != null && right.m > M / 2) {
+            ++cur.m;
+            // 如果此时这个位置的对象未实例化，那么首先实例化该位置的对象
+            if (cur.children[cur.m] == null)
+                cur.children[cur.m] = new Entry(null, null, null);
+
+            // 单纯地复制属性到当前的节点，如果使用引用复制的话会导致出现冗余的链接，甚至出现环
+            cur.children[cur.m].key = children[idx + 1].key;
+            cur.children[cur.m].val = children[idx + 1].val;
+            cur.children[cur.m].next = right.children[0].next;
+            right.children[0].next = right.children[1].next;
+
+            // 更新父节点的分隔元素
+            children[idx + 1].key = right.children[1].key;
+            children[idx + 1].val = right.children[1].val;
+
+            // 由于右子节点被借用了一个元素，因此需要移动右子节点的元素列表使得其依旧是有序的
+            if (right.m >= 0)
+                System.arraycopy(right.children, 2, right.children, 1, right.m);
+            right.m--;
+            return;
+        }
+
+        if (h == height) {
+            if (left != null) {
+                ++left.m;
+                if (left.children[left.m] == null)
+                    left.children[left.m] = new Entry(null, null, null);
+
+                left.children[left.m].key = cur.children[1].key;
+                left.children[left.m].val = cur.children[1].val;
+
+                left.suc = cur;
+                cur.prev = left;
+
+                children[idx].next = null;
+                children[idx] = null;
+
+                if (parent.m + 1 - idx >= 0)
+                    System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
+            } else {
+                // 复制右兄弟节点的所有元素到当前的处理节点
+                for (int i = 1; i <= right.m; ++i)
+                    cur.children[++cur.m] = right.children[i];
+
+                cur.suc = right;
+                right.prev = cur;
+
+                if (parent.m + 1 - (idx + 1) >= 0)
+                    System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
+            }
+
+        } else {
+            if (left != null) {
+                // 首先将父节点的分隔节点复制到当前节点的末尾，由于这个位置可能未实例化，因此首先实例化
+                ++left.m;
+                if (left.children[left.m] == null)
+                    left.children[left.m] = new Entry(null, null, null);
+
+                left.children[left.m].key = children[idx].key;
+                left.children[left.m].val = children[idx].val;
+                left.children[left.m].next = cur.children[0].next;
+                // 复制父节点的分隔节点结束。。。。
+
+                // 再将当前节点的所有元素复制到左兄弟节点，由于位置 0 是一个哨兵元素，因此从元素 1 开始进行复制
+                for (int i = 1; i <= cur.m; ++i)
+                    left.children[++left.m] = cur.children[i];
+
+                // 合并之后，会出现一条多余的链接，这个链接是多余的
+                children[idx].next = null;
+                // 删除父节点的分隔元素之后，移动父节点的分隔元素列表，使得原有的父节点的元素依旧是有序的
+                if (parent.m + 1 - idx >= 0)
+                    System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
+            } else {
+                ++cur.m;
+                if (cur.children[cur.m] == null)
+                    cur.children[cur.m] = new Entry(null, null, null);
+                cur.children[cur.m].key = children[idx + 1].key;
+                cur.children[cur.m].val = children[idx + 1].val;
+                cur.children[cur.m].next = right.children[0].next;
+                children[idx + 1].next = null;
+
+                // 复制右兄弟节点的所有元素到当前的处理节点
+                for (int i = 1; i <= right.m; ++i)
+                    cur.children[++cur.m] = right.children[i];
+
+                // 调整父节点的元素列表
+                if (parent.m + 1 - (idx + 1) >= 0)
+                    System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
+            }
+        }
+        parent.m--;
+
+        if (parent.m == 0 && h == 1) {
+            root = cur;
+            height--;
+        }
     }
 
     private boolean eq(Comparable<K> key1, Comparable<K> key2) {
@@ -245,5 +457,16 @@ public class BPlusTree<K extends Comparable<K>, V> {
         System.out.println(st);
         System.out.println();
 
+        BPlusTree<Integer, Integer> tree = new BPlusTree<>(5);
+        for (int i = 1; i <= 22; ++i)
+            tree.put(i, i);
+
+        for (int i = 1; i <= 15; ++i)
+            tree.delete(i);
+
+        System.out.println("size:    " + tree.size());
+        System.out.println("height:  " + tree.height());
+        System.out.println(tree);
+        System.out.println();
     }
 }
