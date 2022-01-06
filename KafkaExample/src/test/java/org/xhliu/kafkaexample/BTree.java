@@ -122,7 +122,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
      * 将对应的键值对 key-value 插入到树中，如果树中已经存在了 key，
      * 那么将使用这个键值对覆盖树中原有的键值对
      *
-     * @param key : 键值对对应的 key
+     * @param key   : 键值对对应的 key
      * @param value : 键值对对应的 value
      */
     public void put(Key key, Value value) {
@@ -147,10 +147,10 @@ public class BTree<Key extends Comparable<Key>, Value> {
      * 的平衡性，重平衡之后可能也会使得父节点不再满足条件，因此同样地也需要对父节点进行
      * 重平衡，直到满足条件或者到达根节点
      *
-     * @param x : 当前插入的目标节点
-     * @param key : 待插入的键值对的 key
+     * @param x     : 当前插入的目标节点
+     * @param key   : 待插入的键值对的 key
      * @param value : 待插入键值对的 value
-     * @param h : 当前节点所在的树的高度，如果 h 达到了树的高度，说明已经到达了叶子节点
+     * @param h     : 当前节点所在的树的高度，如果 h 达到了树的高度，说明已经到达了叶子节点
      * @return : 插入成功之后，如果重平衡了节点，那么返回重平衡之后的根节点；否则，返回 null
      */
     @SuppressWarnings("unchecked")
@@ -184,53 +184,56 @@ public class BTree<Key extends Comparable<Key>, Value> {
                 }
 
                 if (less(entries[idx].key, key)) continue;
-                // 插入到前一个区间元素中，因为此时的元素已经大于现有的 key 了
-                Node u = insert(entries[idx - 1].next, key, value, h + 1);
-                // 插入结果为 null 说明没有发生节点分裂，正常返回即可
-                if (u == null) return null;
-
-                /*
-                    由于此时发生了节点分裂，需要将分裂后的节点的根节点插入到当前的节点中，
-                    首先需要找到根节点的插入位置
-                */
-                for (idx = 1; idx <= x.m; ++idx)
-                    if (less(u.children[1].key, entries[idx].key)) break;
-
-                /*
-                    分裂后的节点将通过一个根节点和两个子节点的形式返回，为了调整这个根节点，应当将根节点的元素插入到
-                    当前节点，首先需要将根节点的左区间链接放入到插入的位置的节点
-
-                    idx 表示第一个大于分裂的根节点的位置，因此需要调整的是前面的区间链接节点
-                 */
-                entries[idx - 1].next = u.children[0].next;
-                t = u.children[1]; // t 表示待插入的节点
                 break;
             }
 
+            // 插入到前一个区间元素中，因为此时的元素已经大于现有的 key 了
+            Node u = insert(entries[idx - 1].next, key, value, h + 1);
+            // 插入结果为 null 说明没有发生节点分裂，正常返回即可
+            if (u == null) return null;
+
             /*
-                idx > m 表示插入的位置在当前节点的元素列表的末尾，这种情况需要做额外的处理
+                由于此时发生了节点分裂，需要将分裂后的节点的根节点插入到当前的节点中，
+                首先需要找到根节点的插入位置
+            */
+            for (idx = 1; idx <= x.m; ++idx)
+                if (less(u.children[1].key, entries[idx].key)) break;
+
+            /*
+                分裂后的节点将通过一个根节点和两个子节点的形式返回，为了调整这个根节点，应当将根节点的元素插入到
+                当前节点，首先需要将根节点的左区间链接放入到插入的位置的节点
+
+                idx 表示第一个大于分裂的根节点的位置，因此需要调整的是前面的区间链接节点
              */
-            if (idx > x.m) {
-                Node u = insert(entries[x.m].next, key, value, h + 1);
-                if (u == null) return null;
-
-                for (idx = 1; idx <= x.m; ++idx)
-                    if (less(u.children[1].key, x.children[idx].key)) break;
-
-                x.children[idx - 1].next = u.children[0].next;
-                t = u.children[1];
-            }
+            entries[idx - 1].next = u.children[0].next;
+            t = u.children[1]; // t 表示待插入的节点
         }
 
-        if (M - idx >= 0) System.arraycopy(x.children, idx, x.children, idx + 1, M - idx);
+        /*
+            需要将 idx 之后的所有 children 元素向后移动一位，为新插入的键值对提供空间
+         */
+        if (M - idx >= 0)
+            System.arraycopy(x.children, idx, x.children, idx + 1, M - idx);
 
+        // 插入键值对
         x.children[idx] = t;
         x.m++;
 
+        /*
+            如果当前节点插入之后依旧满足限制条件，则正常执行;
+            否则，需要对当前的节点进行分裂的操作
+         */
         if (x.m < M) return null;
         return split(x);
     }
 
+    /**
+     * 通过传入的 key 删除对应的键值对，如果树中不存在这样的 key，则返回 null
+     * 在删除的过程中依旧需要保持树的平衡性
+     *
+     * @param key : 待删除的键值对的 key
+     * @return : 如果删除成功，则返回该 key 对应的键值对; 否则，返回 null
+     */
     public Entry delete(Key key) {
         Entry entry = delete(null, root, key, 0);
         if (entry != null) size--;
@@ -238,6 +241,15 @@ public class BTree<Key extends Comparable<Key>, Value> {
         return entry;
     }
 
+    /**
+     * 通过传入的父节点和当前处理的节点，按照传入的 key 对对应的键值对进行删除
+     *
+     * @param parent : 当前处理的节点的父节点，特别地，根节点的父节点为 null
+     * @param cur    : 当前处理的节点
+     * @param key    : 待删除的 key
+     * @param h      : 当前处理的节点的树的高度
+     * @return : 如果删除成功，返回 key 在树中对应的键值对对象
+     */
     @SuppressWarnings("unchecked")
     private Entry delete(Node parent, Node cur, Key key, int h) {
         Entry entry;
@@ -262,6 +274,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
              */
             for (idx = 1; idx <= cur.m; ++idx) {
                 if (eq(cur.children[idx].key, key)) break;
+
                 // 当前节点在该节点的后继节点中，递归进行删除
                 if (less(key, cur.children[idx].key)) {
                     entry = delete(cur, cur.children[idx - 1].next, key, h + 1);
@@ -291,12 +304,27 @@ public class BTree<Key extends Comparable<Key>, Value> {
         return entry;
     }
 
+    /**
+     * 对传入的节点进行重平衡，具体的做法为: <br />
+     *  1. 如果当前处理的节点的兄弟节点存在多余的元素，则将父节点的分隔节点移动到当前节点中，
+     *     然后再将兄弟节点中的最小（最大）元素复制到父节点的分隔元素中 <br />
+     *  2. 如果兄弟节点都不存在多余的元素，则将父节点和当前处理节点结合左兄弟节点（或右兄弟节点）
+     *     成为一个新的节点，然后在父节点中移除这个分隔元素 <br />
+     *  3. 由于合并之后会使得父节点的元素数目减少，此时父节点可能会不满足 B 树节点的限制条件，
+     *     此时需要递归地重平衡父节点。如果此时的父节点是根节点，那么需要重新修改根节点，
+     *     同时将树的高度 -1<br />
+     *
+     * @param parent : 当前处理的节点的父节点
+     * @param cur : 当前的处理节点，父节点为 null 表示当前处理的是根节点
+     * @param h : 当前处理的节点的树的高度
+     */
     @SuppressWarnings("unchecked")
     private void reBalance(Node parent, Node cur, int h) {
         // parent 为 null 表示当前处理的节点是 root 节点，root 节点不需要重平衡
         if (parent == null) return;
         int idx;
         Entry[] children = parent.children;
+        // 首先找到当前处理节点所在的区间元素
         for (idx = 1; idx <= parent.m; ++idx)
             if (less(cur.children[cur.m].key, children[idx].key))
                 break;
@@ -405,13 +433,19 @@ public class BTree<Key extends Comparable<Key>, Value> {
         cur.children[cur.m].next = right.children[0].next;
         children[idx + 1].next = null;
 
+        // 复制右兄弟节点的所有元素到当前的处理节点
         for (int i = 1; i <= right.m; ++i)
             cur.children[++cur.m] = right.children[i];
+
         // 调整父节点的元素列表
         if (parent.m + 1 - (idx + 1) >= 0)
             System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
-        parent.m--; // 这里又有一个坑 :(
+        parent.m--;
 
+        /*
+            只有当处理节点所在的树的高度为 1 时，
+            才有机会转变成为新的根节点，同时将树的高度 -1
+         */
         if (parent.m == 0 && h == 1) {
             root = cur;
             height--;
@@ -425,17 +459,29 @@ public class BTree<Key extends Comparable<Key>, Value> {
         return min(x.children[1].next);
     }
 
+    /**
+     * 对传入的节点 x 进行分裂操作，具体的行为:
+     * 由于 M 是奇数，因此达到上限时元素的个数一定也是奇数，这个时候就会取这个节点中的
+     * 中位数作为根节点来维护 B 树节点的有序性; 之后，再将 x 中两边的元素平分到两个子节点中，
+     * 调整对应的 next 链接，返回分裂之后的根节点
+     *
+     * @param x : 待分裂的节点 x
+     * @return : 分裂之后的子树的根节点
+     */
     private Node split(Node x) {
         Node t = new Node(M / 2, M);
         x.m = M / 2;
 
+        // 将 x 中的后半部分的节点放入 t 中
         for (int i = 1; i <= M / 2; ++i) {
             t.children[i] = x.children[M / 2 + i + 1];
             x.children[M / 2 + i + 1] = null;
         }
 
-        Node p = new Node(1, M);
-        Entry mid = x.children[M / 2 + 1];
+        Node p = new Node(1, M); // 分裂后形成的根节点
+        Entry mid = x.children[M / 2 + 1]; // x 的中间节点，它的属性将会被作为根节点的属性
+
+        // 调整相关的链接
         t.children[0].next = mid.next;
         x.children[M / 2 + 1] = null; // clear mid
         p.children[0].next = x;
@@ -517,9 +563,11 @@ public class BTree<Key extends Comparable<Key>, Value> {
         System.out.println(st);
         System.out.println();
 
-        BTree<Integer, Integer> bTree = new BTree<>(7);
-        for (int i = 0; i < 31; ++i)
+        BTree<Integer, Integer> bTree = new BTree<>(5);
+        for (int i = 1; i <= 300; ++i)
             bTree.put(i, i);
+        for (int i = 1; i <= 250; ++i)
+            bTree.delete(i);
         System.out.println("B-Tree size  :   " + bTree.size());
         System.out.println("B-Tres height:   " + bTree.height());
         System.out.println(bTree);
