@@ -3,6 +3,9 @@ package org.xhliu.kafkaexample;
 @SuppressWarnings("unchecked")
 public class BPlusTree<K extends Comparable<K>, V> {
 
+    /**
+     * B+ 树中的节点，宏观的节点，用于存储实际存储单元的容器
+     */
     static class Node {
         int m;
         Entry[] children;
@@ -16,6 +19,9 @@ public class BPlusTree<K extends Comparable<K>, V> {
         }
     }
 
+    /**
+     * 实际存储数据的对象
+     */
     static class Entry {
         private Comparable key;
         private Object val;
@@ -65,6 +71,9 @@ public class BPlusTree<K extends Comparable<K>, V> {
         if (x == null) return null;
 
         Entry[] entries = x.children;
+        /*
+            和 B 树的搜索不同的地方在于，B+ 树实际存储数据的元素只能在叶子节点上
+         */
         if (h == height) {
             for (int i = 1; i <= x.m; ++i) {
                 if (eq(entries[i].key, key))
@@ -117,6 +126,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
         Entry[] entries = x.children;
 
         if (h == height) {
+            // 只能在叶子节点上完成元素的插入
             for (idx = 1; idx <= x.m; ++idx) {
                 if (eq(entries[idx].key, key)) {
                     entries[idx].val = val;
@@ -154,6 +164,7 @@ public class BPlusTree<K extends Comparable<K>, V> {
         x.m++;
 
         if (x.m < M) return null;
+        // 对叶子节点和索引节点采取不同的处理策略
         if (h == height) return splitLeaf(x);
         return splitIndex(x);
     }
@@ -197,6 +208,12 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return entry;
     }
 
+    /**
+     * 分裂索引节点，由于索引节点不存储实际数据，因此直接从中间进行分裂即可
+     *
+     * @param x : 待分裂的节点
+     * @return : 分裂之后得到的子树的根节点
+     */
     private Node splitIndex(Node x) {
         Node t = new Node(M / 2, M);
         x.m = M / 2;
@@ -220,6 +237,13 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return p;
     }
 
+    /**
+     * 分裂叶子节点，在分裂叶子节点时需要将分裂后的叶子节点进行链接，从而满足
+     * B+ 树的要求
+     *
+     * @param x : 待分裂的节点
+     * @return : 分裂之后的子树的根节点
+     */
     private Node splitLeaf(Node x) {
         Node t = new Node(M / 2 + 1, M);
         x.m = M / 2;
@@ -244,6 +268,16 @@ public class BPlusTree<K extends Comparable<K>, V> {
         return p;
     }
 
+    /**
+     * 重新平衡当前节点的平衡性，具体行为如下: <br />
+     * 1. 如果左右兄弟节点存在多余的元素，那么直接借用兄弟节点的一个元素来调整当前节点使得当前节点满足限制条件<br />
+     * 2. 如果处理的节点是叶子节点，在调整时需要删除原有的分隔节点元素 <br />
+     * 3. 如果处理的节点是索引节点，则按照一般 B 树的节点来调整当前的节点
+     *
+     * @param parent : 当前处理的节点的父节点
+     * @param cur : 当前待处理的节点
+     * @param h : 当前处理的节点的树的高度，用于判断当前处理的节点是否是叶子节点
+     */
     private void reBalance(Node parent, Node cur, int h) {
         if (parent == null) return;
 
@@ -262,121 +296,25 @@ public class BPlusTree<K extends Comparable<K>, V> {
         if (left == null && right == null) return;
 
         if (left != null && left.m > M / 2) {
-            // 移动当前节点的元素，为新加入的元素腾出位置
-            for (int i = cur.m + 1; i > idx; --i) {
-                if (cur.children[i] == null)
-                    cur.children[i] = new Entry(null, null, null);
-                cur.children[i].key = cur.children[i - 1].key;
-                cur.children[i].val = cur.children[i - 1].val;
-            }
-
-            // 复制属性到当前节点的第一个元素（从 1 开始计数）
-            cur.children[1].key = children[idx].key;
-            cur.children[1].val = children[idx].val;
-            cur.children[1].next = cur.children[0].next;
-            cur.children[0].next = left.children[left.m].next;
-            cur.m++;
-
-            // 将从左子节点借用到的元素的属性复制到父节点的分隔元素，使得树最终是有序的
-            children[idx].key = left.children[left.m].key;
-            children[idx].val = left.children[left.m].val;
-
-            // 删除左子节点的最大元素
-            left.children[left.m] = null;
-            left.m--;
+            reBalanceByLeft(left, cur, parent, idx);
             return;
         }
 
         if (right != null && right.m > M / 2) {
-            ++cur.m;
-            // 如果此时这个位置的对象未实例化，那么首先实例化该位置的对象
-            if (cur.children[cur.m] == null)
-                cur.children[cur.m] = new Entry(null, null, null);
-
-            // 单纯地复制属性到当前的节点，如果使用引用复制的话会导致出现冗余的链接，甚至出现环
-            cur.children[cur.m].key = children[idx + 1].key;
-            cur.children[cur.m].val = children[idx + 1].val;
-            cur.children[cur.m].next = right.children[0].next;
-            right.children[0].next = right.children[1].next;
-
-            // 更新父节点的分隔元素
-            children[idx + 1].key = right.children[1].key;
-            children[idx + 1].val = right.children[1].val;
-
-            // 由于右子节点被借用了一个元素，因此需要移动右子节点的元素列表使得其依旧是有序的
-            if (right.m >= 0)
-                System.arraycopy(right.children, 2, right.children, 1, right.m);
-            right.m--;
+            reBalanceByRight(right, cur, parent, idx);
             return;
         }
 
         if (h == height) {
-            if (left != null) {
-                ++left.m;
-                if (left.children[left.m] == null)
-                    left.children[left.m] = new Entry(null, null, null);
-
-                left.children[left.m].key = cur.children[1].key;
-                left.children[left.m].val = cur.children[1].val;
-
-                left.suc = cur;
-                cur.prev = left;
-
-                children[idx].next = null;
-                children[idx] = null;
-
-                if (parent.m + 1 - idx >= 0)
-                    System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
-            } else {
-                // 复制右兄弟节点的所有元素到当前的处理节点
-                for (int i = 1; i <= right.m; ++i)
-                    cur.children[++cur.m] = right.children[i];
-
-                cur.suc = right;
-                right.prev = cur;
-
-                if (parent.m + 1 - (idx + 1) >= 0)
-                    System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
-            }
-
+            if (left != null)
+                reBalanceLeafByLeft(left, cur, parent, idx);
+            else
+                reBalanceLeafByRight(right, cur, parent, idx);
         } else {
-            if (left != null) {
-                // 首先将父节点的分隔节点复制到当前节点的末尾，由于这个位置可能未实例化，因此首先实例化
-                ++left.m;
-                if (left.children[left.m] == null)
-                    left.children[left.m] = new Entry(null, null, null);
-
-                left.children[left.m].key = children[idx].key;
-                left.children[left.m].val = children[idx].val;
-                left.children[left.m].next = cur.children[0].next;
-                // 复制父节点的分隔节点结束。。。。
-
-                // 再将当前节点的所有元素复制到左兄弟节点，由于位置 0 是一个哨兵元素，因此从元素 1 开始进行复制
-                for (int i = 1; i <= cur.m; ++i)
-                    left.children[++left.m] = cur.children[i];
-
-                // 合并之后，会出现一条多余的链接，这个链接是多余的
-                children[idx].next = null;
-                // 删除父节点的分隔元素之后，移动父节点的分隔元素列表，使得原有的父节点的元素依旧是有序的
-                if (parent.m + 1 - idx >= 0)
-                    System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
-            } else {
-                ++cur.m;
-                if (cur.children[cur.m] == null)
-                    cur.children[cur.m] = new Entry(null, null, null);
-                cur.children[cur.m].key = children[idx + 1].key;
-                cur.children[cur.m].val = children[idx + 1].val;
-                cur.children[cur.m].next = right.children[0].next;
-                children[idx + 1].next = null;
-
-                // 复制右兄弟节点的所有元素到当前的处理节点
-                for (int i = 1; i <= right.m; ++i)
-                    cur.children[++cur.m] = right.children[i];
-
-                // 调整父节点的元素列表
-                if (parent.m + 1 - (idx + 1) >= 0)
-                    System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
-            }
+            if (left != null)
+                reBalanceIndexByLeft(left, cur, parent, idx);
+            else
+                reBalanceIndexByRight(right, cur, parent, idx);
         }
         parent.m--;
 
@@ -384,6 +322,201 @@ public class BPlusTree<K extends Comparable<K>, V> {
             root = cur;
             height--;
         }
+    }
+
+    /**
+     * 由于当前处理的节点存在左兄弟节点，因此这个时候会将左节点的最大元素插入到当前处理节点的最小元素所在的位置
+     * 同时使用该移动的节点的属性覆盖掉原有的父节点的分隔元素的属性，从而实现 B+ 树节点的平衡性
+     *
+     * @param left : 当前处理节点的左兄弟节点
+     * @param cur : 当前正在被处理的节点
+     * @param parent : 当前处理的节点的父节点
+     * @param idx : 当前父节点中分隔元素所在的索引位置
+     */
+    private void reBalanceByLeft(Node left, Node cur, Node parent, int idx) {
+        Entry[] children = parent.children;
+
+        for (int i = cur.m + 1; i > idx; --i) {
+            if (cur.children[i] == null)
+                cur.children[i] = new Entry(null, null, null);
+            cur.children[i].key = cur.children[i - 1].key;
+            cur.children[i].val = cur.children[i - 1].val;
+        }
+
+        // 复制属性到当前节点的第一个元素（从 1 开始计数）
+        cur.children[1].key = children[idx].key;
+        cur.children[1].val = children[idx].val;
+        cur.children[1].next = cur.children[0].next;
+        cur.children[0].next = left.children[left.m].next;
+        cur.m++;
+
+        // 将从左子节点借用到的元素的属性复制到父节点的分隔元素，使得树最终是有序的
+        children[idx].key = left.children[left.m].key;
+        children[idx].val = left.children[left.m].val;
+
+        // 删除左子节点的最大元素
+        left.children[left.m] = null;
+        left.m--;
+    }
+
+    /**
+     * 当前处理的节点存在右兄弟节点，因此这个时候需要将右兄弟节点的最小元素插入到当前处理节点的尾部，
+     * 同时使用该元素的属性覆盖掉原有的父节点的分隔元素的属性。由于右兄弟节点被借用了一个元素，
+     * 因此此时需要调整右兄弟节点所有元素的相对位置
+     *
+     * @param right : 当前处理节点的右兄弟节点
+     * @param cur : 当前正在被处理的节点
+     * @param parent : 当前处理的节点的父节点
+     * @param idx : 当前处理的节点的父节点的分隔元素所在的位置
+     */
+    private void reBalanceByRight(Node right, Node cur, Node parent, int idx) {
+        Entry[] children = parent.children;
+
+        ++cur.m;
+        // 如果此时这个位置的对象未实例化，那么首先实例化该位置的对象
+        if (cur.children[cur.m] == null)
+            cur.children[cur.m] = new Entry(null, null, null);
+
+        // 单纯地复制属性到当前的节点，如果使用引用复制的话会导致出现冗余的链接，甚至出现环
+        cur.children[cur.m].key = children[idx + 1].key;
+        cur.children[cur.m].val = children[idx + 1].val;
+        cur.children[cur.m].next = right.children[0].next;
+        right.children[0].next = right.children[1].next;
+
+        // 更新父节点的分隔元素
+        children[idx + 1].key = right.children[1].key;
+        children[idx + 1].val = right.children[1].val;
+
+        // 由于右子节点被借用了一个元素，因此需要移动右子节点的元素列表使得其依旧是有序的
+        if (right.m >= 0)
+            System.arraycopy(right.children, 2, right.children, 1, right.m);
+        right.m--;
+    }
+
+    /**
+     * 当当前处理的节点的左右兄弟节点都不存在多余的元素，这种情况就需要合并一个兄弟节点成为一个新的节点
+     * 由于 B+ 树的特性，需要对叶子节点和非叶子节点做不同的处理，对于叶子节点来讲，如果它存在左兄弟叶子
+     * 节点，那么直接将当前的节点复制到左兄弟节点的末尾，同时删除原有的父节点的分隔元素
+     *
+     * @param left : 当前处理节点的左兄弟节点
+     * @param cur : 当前正在处理的节点
+     * @param parent : 当前处理节点的父节点
+     * @param idx : 父节点中划分左兄弟节点和当前节点的元素的所在位置
+     */
+    private void reBalanceLeafByLeft(Node left, Node cur, Node parent, int idx) {
+        Entry[] children = parent.children;
+
+        for (int i = 1; i <= cur.m; ++i) {
+            ++left.m;
+            if (left.children[left.m] == null)
+                left.children[left.m] = new Entry(null, null, null);
+
+            left.children[left.m].key = cur.children[i].key;
+            left.children[left.m].val = cur.children[i].val;
+        }
+
+        left.suc = cur;
+        cur.prev = left;
+
+        children[idx].next = null;
+        children[idx] = null;
+
+        if (parent.m + 1 - idx >= 0)
+            System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
+    }
+
+    /**
+     * 当前处理的节点是一个叶子节点，并且当前处理的节点不存在左兄弟节点。
+     * 由于当前处理的节点的左右兄弟节点都不存在多余的元素，同时处理的节点不存在左兄弟节点，因此需要将
+     * 当前处理节点的所有元素都移动到右兄弟节点，然后删除父节点中分隔处理节点和右兄弟节点的元素
+     *
+     * @param right : 当前处理的节点的右兄弟节点
+     * @param cur : 当前正在被处理的节点
+     * @param parent : 当前处理节点的父节点
+     * @param idx : 父节点中划分右兄弟节点和当前节点的元素的所在位置
+     */
+    private void reBalanceLeafByRight(Node right, Node cur, Node parent, int idx) {
+        Entry[] children = parent.children;
+
+        // 复制右兄弟节点的所有元素到当前的处理节点
+        for (int i = 1; i <= right.m; ++i)
+            cur.children[++cur.m] = right.children[i];
+
+        cur.suc = right;
+        right.prev = cur;
+
+        if (parent.m + 1 - (idx + 1) >= 0)
+            System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
+    }
+
+    /**
+     * 由于当前处理的节点类型为索引节点，和叶子节点的处理不同，索引节点存在后继链接，因此在处理时需要对
+     * 后继链接做额外的处理<br />
+     * 将父节点中分隔当前节点和左兄弟节点的元素都移动到左兄弟节点，然后将当前节点的最左链接复制到移下来的
+     * 分隔节点的后继链接，从而维护节点的平衡性
+     *
+     * @param left : 当前处理节点的左兄弟节点
+     * @param cur : 当前正在处理的节点
+     * @param parent : 当前正在处理的节点的父节点
+     * @param idx : 父节点中划分左兄弟节点和当前节点的元素的所在位置
+     */
+    private void reBalanceIndexByLeft(Node left, Node cur, Node parent, int idx) {
+        Entry[] children = parent.children;
+
+        // 首先将父节点的分隔节点复制到当前节点的末尾，由于这个位置可能未实例化，因此首先实例化
+        ++left.m;
+        if (left.children[left.m] == null)
+            left.children[left.m] = new Entry(null, null, null);
+
+        left.children[left.m].key = children[idx].key;
+        left.children[left.m].val = children[idx].val;
+        left.children[left.m].next = cur.children[0].next;
+        // 复制父节点的分隔节点结束。。。。
+
+        // 再将当前节点的所有元素复制到左兄弟节点，由于位置 0 是一个哨兵元素，因此从元素 1 开始进行复制
+        for (int i = 1; i <= cur.m; ++i)
+            left.children[++left.m] = cur.children[i];
+
+        // 合并之后，会出现一条多余的链接，这个链接是多余的
+        children[idx].next = null;
+        // 删除父节点的分隔元素之后，移动父节点的分隔元素列表，使得原有的父节点的元素依旧是有序的
+        if (parent.m + 1 - idx >= 0)
+            System.arraycopy(children, idx + 1, children, idx, parent.m + 1 - idx);
+    }
+
+    /**
+     * 当前处理的节点是一个索引节点<br />
+     * 由于当前处理的节点不存在左链接节点，因此如果该节点如果不是根节点（根节点的判断由调用该方法的程序检测），
+     * 那么一定存在右兄弟节点<br />
+     * 此时具体的做法为: <br />
+     * 1. 父节点中的分隔元素移动到当前处理节点的末尾<br />
+     * 2. 将该分隔元素的后继链接设置为右兄弟节点的最左链接 <br />
+     * 3. 将右兄弟节点中的所有非哨兵节点复制到当前的节点 <br />
+     * 4. 删除原有父节点中右兄弟节点的直接父节点元素<br />
+     *
+     * @param right : 当前处理的节点的右兄弟节点
+     * @param cur : 当前正在处理的节点
+     * @param parent : 当前处理的节点的父节点
+     * @param idx : 当前处理的节点的父节点中的直接练级元素，即分隔当前节点和右兄弟节点的元素的前一个元素所在的位置
+     */
+    private void reBalanceIndexByRight(Node right, Node cur, Node parent, int idx) {
+        Entry[] children = parent.children;
+
+        ++cur.m;
+        if (cur.children[cur.m] == null)
+            cur.children[cur.m] = new Entry(null, null, null);
+        cur.children[cur.m].key = children[idx + 1].key;
+        cur.children[cur.m].val = children[idx + 1].val;
+        cur.children[cur.m].next = right.children[0].next;
+        children[idx + 1].next = null;
+
+        // 复制右兄弟节点的所有元素到当前的处理节点
+        for (int i = 1; i <= right.m; ++i)
+            cur.children[++cur.m] = right.children[i];
+
+        // 调整父节点的元素列表
+        if (parent.m + 1 - (idx + 1) >= 0)
+            System.arraycopy(children, idx + 1 + 1, children, idx + 1, parent.m + 1 - (idx + 1));
     }
 
     private boolean eq(Comparable<K> key1, Comparable<K> key2) {
