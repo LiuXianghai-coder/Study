@@ -64,7 +64,7 @@ public class Http extends NanoHTTPD {
                                 return uri.startsWith(registerUrl);
                             })
                             .max(Comparator.comparing(entry -> entry.getKey().split("/").length));
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 log.info("unknown uri mapping={}", uri);
                 return newFixedLengthResponse("");
             }
