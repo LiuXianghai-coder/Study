@@ -1,10 +1,10 @@
-package org.xhliu.acs;
+package org.xhliu.shirodemo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class AcsApplicationTests {
+class ShiroDemoApplicationTests {
 
     @Test
     void contextLoads() {
