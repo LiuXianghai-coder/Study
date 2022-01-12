@@ -8,7 +8,7 @@
     </appender>
 
     <logger name="java" additivity="false" />
-    <logger name="java.lang" level="info">
+    <logger name="java.lang" level="warn">
         <appender-ref ref="STDOUT" />
     </logger>
 
