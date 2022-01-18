@@ -1,0 +1,12 @@
+server:
+  port: 8080
+spring:
+  main:
+    allow-circular-references: true
+  application:
+    name: UruleClient
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/lxh_db
+    username: root
+    password: 12345678
+    name: urule-datasource

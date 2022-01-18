@@ -1,0 +1,250 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+    <style>
+        .demo {
+            font-family: sans-serif;
+            border: 1px solid #eee;
+            border-radius: 2px;
+            padding: 20px 30px;
+            margin-top: 1em;
+            margin-bottom: 40px;
+            user-select: none;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div id="hello-vue" class="demo">
+    {{ message }}
+</div>
+<div id="counter">
+    Counter: {{Counter}}
+</div>
+
+<div id="bind-attribute">
+    <span v-bind:title="message">
+        鼠标悬停几秒钟查看此处动态绑定的提示信息！
+    </span>
+</div>
+
+<br/>
+<div id="event-handing">
+    <p>{{message}}</p>
+    <button v-on:click="reverseMessage">Reverse</button>
+</div>
+
+<br/>
+<div id="two-way-binding">
+    <p>{{message}}</p>
+    <input v-model="message"/>
+</div>
+
+<br/>
+<div id="conditional-rendering">
+    <span v-if="seen">You Look Me</span>
+    <br/>
+    <button v-on:click="showSeen">Show</button>
+</div>
+
+<br/>
+<div id="list-rendering">
+    <ol>
+        <li v-for="todo in todos">
+            {{todo.text}}
+        </li>
+    </ol>
+</div>
+
+<br/>
+<div id="component-app" class="demo">
+    <ol>
+        <todo-item
+                v-for="item in groceryList"
+                v-bind:todo="item"
+                v-bind:key="item.id"
+        ></todo-item>
+    </ol>
+</div>
+
+<br/>
+<div id="compute-basics">
+    <p>Hash published books: </p>
+    <span>{{publishedBookMessage}}</span>
+    <p>{{currentDateTime}}</p>
+</div>
+
+<br/>
+<div id="watch-example">
+    <p>Ask a yes/no question:</p>
+    <input v-model="question" />
+    <p>{{answer}}</p>
+</div>
+<script type="text/javascript">
+    const HelloVueApp = {
+        data() {
+            return {
+                message: 'Hello Lxh!!'
+            }
+        }
+    }
+
+    const Counter = {
+        data() {
+            return {
+                counter: 0
+            }
+        },
+        // mounted() {
+        //     setInterval(()=> {
+        //         this.Counter++;
+        //     }, 1000);
+        // }
+    }
+
+    const AttributeBinding = {
+        data() {
+            return {
+                message: 'you load this page on' + new Date().toLocaleString()
+            }
+        }
+    }
+
+    const EventHanding = {
+        data() {
+            return {
+                message: "Hello Vue"
+            }
+        },
+        methods: {
+            reverseMessage() {
+                this.message = this.message
+                    .split("")
+                    .reverse()
+                    .join("");
+            }
+        }
+    }
+
+    const TwoWayBinding = {
+        data() {
+            return {
+                message: "Hello Vue"
+            }
+        }
+    }
+
+    const ConditionRendering = {
+        data() {
+            return {
+                seen: true
+            }
+        },
+        methods: {
+            showSeen() {
+                console.log("click show");
+                this.seen = !this.seen;
+            }
+        }
+    }
+
+    const ListRendering = {
+        data() {
+            return {
+                todos: [
+                    {text: "Learn JavaScript"},
+                    {text: "Learn Vue"},
+                    {text: "Learn Java"}
+                ]
+            }
+        }
+    }
+
+    const ComponentsApp = {
+        data() {
+            return {
+                groceryList: [
+                    {id: 0, text: 'Vegetables'},
+                    {id: 1, text: 'Cheese'},
+                    {id: 2, text: 'Whatever else humans are supposed to eat'}
+                ]
+            }
+        }
+    }
+
+    const ComputeBasic = {
+        data() {
+            return {
+                author: {
+                    name: "John Doe",
+                    books: [
+                        'Vue 2 - Advanced Guide',
+                        'Vue 3 - Basic Guide',
+                        'Vue 4 - The Mystery'
+                    ]
+                }
+            }
+        },
+
+        computed: {
+            publishedBookMessage() {
+                return this.author.books.length > 0 ? "Yes" : "No"
+            },
+
+            currentDateTime() {
+                return new Date().toLocaleString();
+            }
+        }
+    }
+
+    const WatcherExample = {
+        data() {
+            return {
+                question: "",
+                answer: "Questions usually contain a question mark. ;-"
+            }
+        },
+
+        watch: {
+            question(newQuestion, oldQuestion) {
+                if (newQuestion.indexOf("?") > -1) this.getAnswer();
+            }
+        },
+
+        methods: {
+            getAnswer() {
+                this.answer = "Thinking....."
+                axios
+                    .get("https://yesno.wtf/api")
+                    .then(res => {
+                        this.answer = res.data.answer;
+                    })
+                    .catch(error => {
+                        this.answer = "Error! Could not reach the API. " + error;
+                    })
+            }
+        }
+    }
+
+    const app = Vue.createApp(ComponentsApp);
+    app.component('todo-item', {
+        props: ['todo', 'key'],
+        template: `<li>{{ key + '\t' + todo.text }}</li>`
+    });
+    app.mount("#component-app");
+
+    Vue.createApp(WatcherExample).mount("#watch-example");
+    Vue.createApp(ComputeBasic).mount("#compute-basics");
+    Vue.createApp(HelloVueApp).mount('#hello-vue');
+    Vue.createApp(Counter).mount("#counter");
+    Vue.createApp(AttributeBinding).mount('#bind-attribute');
+    Vue.createApp(EventHanding).mount("#event-handing");
+    Vue.createApp(TwoWayBinding).mount("#two-way-binding");
+    Vue.createApp(ConditionRendering).mount("#conditional-rendering");
+    Vue.createApp(ListRendering).mount("#list-rendering")
+</script>
+</body>
+</html>

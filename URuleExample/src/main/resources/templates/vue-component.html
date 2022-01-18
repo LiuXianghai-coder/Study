@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vue Component</title>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+
+    <style>
+        .demo {
+            font-family: sans-serif;
+            border: 1px solid #eee;
+            border-radius: 2px;
+            padding: 20px 30px;
+            margin-top: 1em;
+            margin-bottom: 40px;
+            user-select: none;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="demo">
+    <p :style="styleObject">Hello World!</p>
+    <my-component class="bza zoo" :style="styleObject"></my-component>
+</div>
+
+<br/>
+<div id="app1" class="demo">
+    <div :style="styleObject">OK</div>
+</div>
+
+<br/>
+<div id="if-example" class="demo">
+    <h1 v-if="awesome">Vue is awesome</h1>
+    <h1 v-else>Oh no 😥</h1>
+
+    <template v-if="ok">
+        <h1>title</h1>
+        <p>Paragraph 1</p>
+        <p>Paragraph 2</p>
+    </template>
+
+    <br/>
+    <div v-show="ok">Hello By Show</div>
+
+    <br/>
+    <div v-if="Math.random() > 0.5">Now you see me</div>
+    <div v-else>Now you don't</div>
+
+    <br/>
+    <div v-if="type === 'A'">A</div>
+    <div v-else-if="type === 'B'">B</div>
+    <div v-else-if="type === 'C'">C</div>
+    <div v-else>Not A/B/C</div>
+</div>
+
+<br/>
+<ul id="array-rendering" class="demo">
+    <li v-for="(item, index) in items">
+        {{parentMsg}}—{{item.message}}—{{index}}
+    </li>
+
+    <br/>
+    <li v-for="(value, name, index) in myObject">
+        {{index}}: {{name}}——>{{value}}
+    </li>
+
+    <br/>
+    <li v-for="item in items" :key="item.id">
+        {{key}} ——> {{item}}
+    </li>
+    <li v-for="n in evenNumber" :key="n">{{n}}</li>
+
+    <br/>
+    <ul v-for="number in sets">
+        <li v-for="n in even(number)" :key="n">{{n}}</li>
+    </ul>
+
+    <br/>
+    <ul>
+        <template v-for="item in items" :key="item.message">
+            <li>{{item}}</li>
+            <li class="divider" role="presentation"></li>
+        </template>
+    </ul>
+</ul>
+
+<br/>
+<div id="for-example" class="demo">
+    <form v-on:submit.prevent="addNewTodo">
+        <label for="new-todo">Add a todo</label>
+        <input v-model="newTodoText"
+               id="new-todo"
+               placeholder="E.g. Feed th Cat"
+        />
+        <button>add</button>
+    </form>
+    <br/>
+    <my-component v-for="(item, index) in items"
+                  :item="item"
+                  :index="index"
+                  :key="item.id"
+    ></my-component>
+    <ul>
+        <todo-item v-for="(todo, index) in todos"
+                   :key="todo.id"
+                   :title="todo.title"
+                   @remove="todos.splice(index, 1)"
+        ></todo-item>
+    </ul>
+</div>
+
+<br />
+<div id="event-example" class="demo">
+    <button @click="counter += 1">Add One</button>
+    <p>The button has been click {{counter}} times</p>
+
+    <button @click="greet">Greet</button><br />
+    <button @click="say('hi')">Say Hi</button><br />
+    <button @click="say('what')">Say What</button><br />
+    <button @click="warn('Form Cannot Be Submit yet', $event)">Submit</button>
+
+    <br />
+    <input id="enter-event" @keyup.enter="enterUp"/><br />
+    <input id="ctrl-up-event" @keyup.ctrl.exact="ctrlUp"/>
+</div>
+
+<br />
+<div id="form-example" class="demo">
+    <input v-model="msg" placeholder="Edit me" />
+    <p>Message: {{msg}}</p>
+
+    <br />
+    <span>Multiline message is:</span>
+    <p style="white-space: pre-line;">{{ msg }}</p>
+    <textarea v-model="msg" placeholder="Add Multiple Lines" ></textarea>
+
+    <br />
+    <input type="checkbox" id="form-checkbox" v-model="checked" value="status">status
+    <br />
+    <label for="form-checkbox" >{{checked}}</label>
+
+    <br /><br />
+    <input type="checkbox" id="jack" value="Jack" v-model="checkedNames" />
+    <label for="jack">Jack</label>
+    <input type="checkbox" id="jhon" value="Jhon" v-model="checkedNames">
+    <label for="jhon">Jhon</label>
+    <input type="checkbox" id="mike" value="Mike" v-model="checkedNames">
+    <label for="mike">Mike</label>
+    <br />
+    <span>Checked Names: {{checkedNames}}</span>
+
+    <br /><br />
+    <input type="radio" id="one" value="one" v-model="picked" />
+    <label for="one">one</label>
+    <input type="radio" id="two" value="two" v-model="picked" />
+    <label for="two">two</label>
+    <br />
+    <span>Picked: {{picked}}</span>
+
+    <br /><br />
+    <select v-model="selected">
+        <option disabled value="">Please Select One</option>
+        <option>A</option>
+        <option>B</option>
+        <option>C</option>
+    </select>
+    <br />
+    <span>Selected: {{selected}}</span>
+
+    <br /><br />
+    <select v-model="multipleSelected" multiple>
+        <option disabled value="">Please Select One</option>
+        <option>A</option>
+        <option>B</option>
+        <option>C</option>
+    </select>
+    <br />
+    <span>Selected: {{multipleSelected}}</span>
+
+    <br /><br />
+    <select v-model="dynamicSelected">
+        <option v-for="option in options" :value="option.value">
+            {{option.text}}
+        </option>
+    </select>
+    <br />
+    <span>Selected: {{dynamicSelected}}</span>
+</div>
+
+<script type="text/javascript">
+    const Application = {
+        data() {
+            return {
+                styleObject: {
+                    activeColor: "red",
+                    fontSize: "20px",
+                    color: "blue"
+                }
+            }
+        }
+    };
+
+    const StyleApplication = {
+        data() {
+            return {
+                styleObject: {
+                    activeColor: "red",
+                    fontSize: "20px",
+                    color: "red"
+                }
+            }
+        }
+    }
+
+    const IfExampleApplication = {
+        data() {
+            const arr = ["A", 'B', 'C', 'D', 'E'];
+            let idx = Math.ceil(Math.random() * arr.length);
+
+            return {
+                awesome: false,
+                ok: true,
+                type: arr[idx]
+            }
+        }
+    }
+
+    const ListExample = {
+        data() {
+            return {
+                parentMsg: "parent",
+                items: [
+                    {id: 0, message: "foo"},
+                    {id: 1, message: "bar"},
+                ],
+                myObject: {
+                    title: 'How to do lists in Vue',
+                    author: 'Jane Doe',
+                    publishedAt: '2016-04-10'
+                },
+                number: [1, 2, 3, 4, 5, 6, 7, 8],
+                sets: [
+                    [1, 2, 3, 4, 5],
+                    [6, 7, 8, 9, 10]
+                ]
+            }
+        },
+
+        computed: {
+            evenNumber() {
+                return this.number.filter((i) => i % 2 === 0);
+            }
+        },
+
+        methods: {
+            even(number) {
+                return number.filter(i => i % 2 === 0);
+            }
+        },
+
+        updated() {
+            console.log("ListExample Component has been updated...");
+        }
+    }
+
+    const ForExample = {
+        data() {
+            return {
+                newTodoText: "",
+                items: [
+                    {id: 0, message: "foo"},
+                    {id: 1, message: "bar"},
+                ],
+                todos: [
+                    {id: 1, title: 'Do the dishes'},
+                    {id: 2, title: 'Take out the trash'},
+                    {id: 3, title: 'Mow the lawn'}
+                ],
+                nextTodoId: 4
+            }
+        },
+
+        methods: {
+            addNewTodo() {
+                this.todos.push({
+                    id: this.nextTodoId++,
+                    title: this.newTodoText
+                });
+                this.newTodoText = "";
+            }
+        }
+    }
+
+    const EventExample = {
+        data() {
+            return {
+                counter: 0,
+                name: "vue.js"
+            }
+        },
+        methods: {
+            greet(event) {
+                alert("Hello " + this.name + "!");
+                if (event) alert(event.target.tagName);
+            },
+
+            say(msg) {
+                alert(msg);
+            },
+
+            warn(msg, event) {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                alert(msg);
+            },
+
+            enterUp() {
+                alert("Enter Key Up");
+            },
+
+            ctrlUp() {
+                alert("ctrl Key Up")
+            }
+        }
+    }
+
+    const FormExample = {
+        data() {
+            return {
+                msg: "",
+                checked: false,
+                checkedNames: [],
+                picked: "",
+                selected: "",
+                multipleSelected: "",
+                dynamicSelected: [],
+                options: [
+                    { text: 'One', value: 'A' },
+                    { text: 'Two', value: 'B' },
+                    { text: 'Three', value: 'C' }
+                ]
+            }
+        }
+    }
+
+    Vue.createApp(FormExample).mount("#form-example");
+
+    Vue.createApp(EventExample).mount("#event-example");
+
+    Vue.createApp(Application)
+        .component('my-component', {
+            template: `<p class="foo bar">This is paragraph</p>`
+        })
+        .mount("#app");
+
+    Vue.createApp(StyleApplication).mount("#app1");
+    Vue.createApp(IfExampleApplication).mount("#if-example");
+    Vue.createApp(ListExample).mount("#array-rendering");
+
+    Vue.createApp(ForExample)
+        .component("my-component", {
+            template: `<div></div>`
+        })
+        .component("todo-item", {
+            template: `
+              <li>
+              {{ title }}
+              <button @click="$emit('remove')">Remove</button>
+              </li>
+            `,
+            props: ["title"],
+            emits: ['remove']
+        })
+        .mount("#for-example");
+</script>
+</body>
+</html>
