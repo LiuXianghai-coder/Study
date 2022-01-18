@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+    <classPathEntry
+            location="/Users/kitty/Software/apache-maven-3.6.3/repo/mysql/mysql-connector-java/8.0.22/mysql-connector-java-8.0.22.jar"/>
+    <context id="DB2Tables" targetRuntime="MyBatis3">
+
+        <commentGenerator>
+            <property name="suppressAllComments" value="true"/>
+        </commentGenerator>
+
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/rac_management" userId="root"
+                        password="123456"/>
+
+        <javaTypeResolver type="">
+            <property name="forceBigDecimals" value="false"/>
+        </javaTypeResolver>
+
+        <javaModelGenerator targetPackage="com.zwedu.rac.infrastructure.po"
+                            targetProject="src/main/java">
+
+            <property name="enableSubPackages" value="true"/>
+            <property name="trimStrings" value="true"/>
+        </javaModelGenerator>
+
+        <sqlMapGenerator targetPackage="mybatis" targetProject="src/main/resources">
+            <property name="enableSubPackages" value="true"/>
+        </sqlMapGenerator>
+
+
+        <javaClientGenerator type="ANNOTATEDMAPPER" targetPackage="com.zwedu.rac.infrastructure.mapper"
+                             targetProject="src/main/java">
+            <property name="enableSubPackages" value="true"/>
+        </javaClientGenerator>
+
+<!--        <table tableName="tb_biz_entity"-->
+<!--               domainObjectName="BizEntityPo"-->
+<!--               mapperName="BizEntityBaseMapper"-->
+<!--               sqlProviderName="BizEntitySqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_biz_entity_control"-->
+<!--               domainObjectName="BizEntityControlPo"-->
+<!--               mapperName="BizEntityControlBaseMapper"-->
+<!--               sqlProviderName="BizEntityControlSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+        <table tableName="tb_biz_line"
+               domainObjectName="BizLinePo"
+               mapperName="BizLineBaseMapper"
+               sqlProviderName="BizLineSqlSupporter"
+               enableSelectByExample="false"
+               enableCountByExample="false"
+               enableUpdateByExample="false"
+               enableDeleteByExample="false">
+            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>
+        </table>
+<!--        <table tableName="tb_dictionary"-->
+<!--               domainObjectName="DictionaryPo"-->
+<!--               mapperName="DictionaryBaseMapper"-->
+<!--               sqlProviderName="DictionarySqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_dictionary_node"-->
+<!--               domainObjectName="DictionaryNodePo"-->
+<!--               mapperName="DictionaryNodeBaseMapper"-->
+<!--               sqlProviderName="DictionaryNodeSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_dimension"-->
+<!--               domainObjectName="DimensionPo"-->
+<!--               mapperName="DimensionBaseMapper"-->
+<!--               sqlProviderName="DimensionSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+        <table tableName="tb_dimension_node"
+               domainObjectName="DimensionNodePo"
+               mapperName="DimensionNodeBaseMapper"
+               sqlProviderName="DimensionNodeSqlSupporter"
+               enableSelectByExample="false"
+               enableCountByExample="false"
+               enableUpdateByExample="false"
+               enableDeleteByExample="false">
+            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>
+        </table>
+<!--        <table tableName="tb_dimension_node_control"-->
+<!--               domainObjectName="DimensionNodeControlPo"-->
+<!--               mapperName="DimensionNodeControlBaseMapper"-->
+<!--               sqlProviderName="DimensionNodeControlSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_ext_property"-->
+<!--               domainObjectName="ExtPropertyPo"-->
+<!--               mapperName="ExtPropertyBaseMapper"-->
+<!--               sqlProviderName="ExtendPropertySqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_ext_data"-->
+<!--               domainObjectName="ExtDataPo"-->
+<!--               mapperName="ExtDataBaseMapper"-->
+<!--               sqlProviderName="ExtDataSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_func"-->
+<!--               domainObjectName="FuncPo"-->
+<!--               mapperName="FuncBaseMapper"-->
+<!--               sqlProviderName="FuncSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_strategy"-->
+<!--               domainObjectName="StrategyPo"-->
+<!--               mapperName="StrategyBaseMapper"-->
+<!--               sqlProviderName="StrategySqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_role"-->
+<!--               domainObjectName="RolePo"-->
+<!--               mapperName="RoleBaseMapper"-->
+<!--               sqlProviderName="RoleSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_menu"-->
+<!--               domainObjectName="MenuPo"-->
+<!--               mapperName="MenuBaseMapper"-->
+<!--               sqlProviderName="MenuSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_role_func"-->
+<!--               domainObjectName="RoleFuncPo"-->
+<!--               mapperName="RoleFuncBaseMapper"-->
+<!--               sqlProviderName="RoleFuncSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+        <table tableName="tb_user"
+               domainObjectName="UserPo"
+               mapperName="UserBaseMapper"
+               sqlProviderName="UserSqlSupporter"
+               enableSelectByExample="false"
+               enableCountByExample="false"
+               enableUpdateByExample="false"
+               enableDeleteByExample="false">
+            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>
+        </table>
+<!--        <table tableName="tb_user_dimension_node"-->
+<!--               domainObjectName="UserDimensionNodePo"-->
+<!--               mapperName="UserDimensionNodeBaseMapper"-->
+<!--               sqlProviderName="UserDimensionNodeSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_user_role"-->
+<!--               domainObjectName="UserRolePo"-->
+<!--               mapperName="UserRoleBaseMapper"-->
+<!--               sqlProviderName="UserRoleSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+<!--        <table tableName="tb_role_menu"-->
+<!--               domainObjectName="RoleMenuPo"-->
+<!--               mapperName="RoleMenuBaseMapper"-->
+<!--               sqlProviderName="RoleMenuSqlSupporter"-->
+<!--               enableSelectByExample="false"-->
+<!--               enableCountByExample="false"-->
+<!--               enableUpdateByExample="false"-->
+<!--               enableDeleteByExample="false">-->
+<!--            <generatedKey column="id" sqlStatement="JDBC" identity="true"/>-->
+<!--        </table>-->
+    </context>
+</generatorConfiguration>
