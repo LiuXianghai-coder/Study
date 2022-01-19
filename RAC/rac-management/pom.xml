@@ -28,7 +28,7 @@
         <spring-boot-starter-aop.version>2.1.4.RELEASE</spring-boot-starter-aop.version>
         <jetbrains.version>19.0.0</jetbrains.version>
         <mapstruct.version>1.4.1.Final</mapstruct.version>
-        <lombok.version>1.18.16</lombok.version>
+        <lombok.version>1.18.22</lombok.version>
         <spring-retry.version>1.2.4.RELEASE</spring-retry.version>
         <mysql.version>8.0.22</mysql.version>
         <pagehelper.version>1.2.7</pagehelper.version>

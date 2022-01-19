@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @date 2020/12/06
  */
 @EnableDubbo
-@EnableAutoConfiguration
 @MapperScan("com.zwedu.cust.mapper")
 @SpringBootApplication(scanBasePackages = "com.zwedu.cust.*")
 public class RacManagementApplication {

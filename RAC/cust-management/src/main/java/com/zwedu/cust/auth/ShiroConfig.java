@@ -25,8 +25,7 @@ public class ShiroConfig {
 
     @Bean(name = "authorizingRealm")
     public UserAuthorizingRealm authorizingRealm() {
-        UserAuthorizingRealm userAuthorizingRealm = new UserAuthorizingRealm();
-        return userAuthorizingRealm;
+        return new UserAuthorizingRealm();
     }
 
     //权限管理，配置主要是Realm的管理认证
