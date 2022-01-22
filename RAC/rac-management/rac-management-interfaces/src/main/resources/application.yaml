@@ -26,9 +26,9 @@ mybatis:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 server:
   url:
-    login: http://localhost:8082/#/login
-    logout: http://localhost:8082/#/logout
-    success: http://localhost:8082/#/
+    login: http://localhost:8080/#/login
+    logout: http://localhost:8080/#/logout
+    success: http://localhost:8080/#/
   port: 8081
   servlet:
     context-path: /rac

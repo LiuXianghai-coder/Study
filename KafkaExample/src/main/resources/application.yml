@@ -1,6 +1,11 @@
 server:
   port: 8081
 spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://39.99.129.90:3306/vote
+    username: root
+    password: 17358870357yi
   kafka:
     producer:
       acks: 1

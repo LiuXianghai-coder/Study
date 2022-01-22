@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "server.url.login",
+      "type": "java.lang.String",
+      "description": "Description for server.url.login."
+    },
+    {
+      "name": "server.url.logout",
+      "type": "java.lang.String",
+      "description": "Description for server.url.logout."
+    },
+    {
+      "name": "server.url.success",
+      "type": "java.lang.String",
+      "description": "Description for server.url.success."
+    }
+  ] }
