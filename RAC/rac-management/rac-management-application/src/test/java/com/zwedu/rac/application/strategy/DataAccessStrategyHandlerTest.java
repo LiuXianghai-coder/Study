@@ -1,7 +1,10 @@
 package com.zwedu.rac.application.strategy;
 
+import com.zwedu.rac.application.service.UserAppService;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.Resource;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,6 +15,9 @@ import java.util.regex.Pattern;
  * @date 2020/12/25
  */
 public class DataAccessStrategyHandlerTest {
+    @Resource
+    UserAppService userAppService;
+
     @Test
     public void testUserPropertyAccess() {
 //        StrategyRdo strategyRdo = new StrategyRdo();
@@ -24,6 +30,7 @@ public class DataAccessStrategyHandlerTest {
 //        StrategyInfo strategyInfo = ;
 //        boolean hasAuth = DataAccessStrategyHandlerBuilder.instance(2).hasAuth(strategyInfo, racContext);
 //        Assert.assertTrue(hasAuth);
+        System.out.println(userAppService);
     }
 
     @Test

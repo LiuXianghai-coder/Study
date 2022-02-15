@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AuthenticatorDemo extends AuthorizingRealm {
-    private final static Logger log = LoggerFactory.getLogger(EncryptRealm.class);
+    private final static Logger log = LoggerFactory.getLogger(AuthenticatorDemo.class);
 
     @Override
     protected AuthorizationInfo
