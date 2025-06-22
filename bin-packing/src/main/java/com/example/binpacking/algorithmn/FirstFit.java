@@ -16,10 +16,26 @@ public class FirstFit
     public List<List<Map<Object, Object>>> firstFit(String shipFileName, Map<Object, BigDecimal> limitMap) {
         // 随机打乱物件排列顺序
         List<Map<Object, Object>> shipDataList = shuffList(loadShipLabelData(shipFileName));
-        List<List<Map<Object, Object>>> ans = new ArrayList<>();
+        return firstFit(shipDataList, new ArrayList<>(), limitMap);
+    }
+
+    public List<List<Map<Object, Object>>> firstFit(List<Map<Object, Object>> dataList,
+                                                    List<List<Map<Object, Object>>> groupDataList,
+                                                    Map<Object, BigDecimal> limitMap) {
+        List<List<Map<Object, Object>>> ans = new ArrayList<>(groupDataList);
         Map<Object, BigDecimal> accumulate = new HashMap<>();
         List<Map<Object, Object>> groupList = new ArrayList<>();
-        for (Map<Object, Object> shipData : shipDataList) {
+        label:
+        for (Map<Object, Object> shipData : dataList) {
+            for (List<Map<Object, Object>> groupData : groupDataList) {
+                Map<Object, BigDecimal> accumulateGroup = accumulateGroup(groupData, limitMap);
+                boolean addable = itemAddable(accumulateGroup, shipData, limitMap);
+                if (addable) {
+                    groupData.add(shipData);
+                    continue label;
+                }
+            }
+
             boolean addable = itemAddable(accumulate, shipData, limitMap);
             if (addable) {
                 addItem(accumulate, shipData, limitMap);

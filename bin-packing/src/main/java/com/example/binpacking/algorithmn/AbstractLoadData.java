@@ -1,6 +1,5 @@
 package com.example.binpacking.algorithmn;
 
-import com.example.binpacking.entity.ShippingLabel;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,7 +33,9 @@ public abstract class AbstractLoadData {
         }
     }
 
-    protected boolean itemAddable(Map<Object, BigDecimal> accumulate, Map<Object, Object> item, Map<Object, BigDecimal> limitMap) {
+    protected boolean itemAddable(Map<Object, BigDecimal> accumulate,
+                                  Map<Object, Object> item,
+                                  Map<Object, BigDecimal> limitMap) {
         for (Map.Entry<Object, BigDecimal> entry : limitMap.entrySet()) {
             Object key = entry.getKey();
             BigDecimal curVal = accumulate.getOrDefault(key, BigDecimal.ZERO);
@@ -47,13 +48,40 @@ public abstract class AbstractLoadData {
         return true;
     }
 
-    protected void addItem(Map<Object, BigDecimal> accumulate, Map<Object, Object> item, Map<Object, BigDecimal> limitMap) {
+    protected Map<Object, BigDecimal> accumulateGroup(List<Map<Object, Object>> groupData,
+                                                      Map<Object, BigDecimal> limitMap) {
+        Map<Object, BigDecimal> ans = new HashMap<>();
+        for (Map<Object, Object> data : groupData) {
+            for (Map.Entry<Object, BigDecimal> entry : limitMap.entrySet()) {
+                Object key = entry.getKey();
+                BigDecimal dataVal = determineObjDecimalVal(data.getOrDefault(key, BigDecimal.ZERO));
+                ans.put(key, ans.getOrDefault(key, BigDecimal.ZERO).add(dataVal));
+            }
+        }
+        return ans;
+    }
+
+    protected void addItem(Map<Object, BigDecimal> accumulate,
+                           Map<Object, Object> item,
+                           Map<Object, BigDecimal> limitMap) {
         for (Map.Entry<Object, BigDecimal> entry : limitMap.entrySet()) {
             Object key = entry.getKey();
             BigDecimal curVal = accumulate.getOrDefault(key, BigDecimal.ZERO);
             if (!item.containsKey(key)) continue;
             BigDecimal itemVal = determineObjDecimalVal(item.get(key));
             accumulate.put(key, curVal.add(itemVal));
+        }
+    }
+
+    protected void removeItem(Map<Object, BigDecimal> accumulate,
+                              Map<Object, Object> item,
+                              Map<Object, BigDecimal> limitMap) {
+        for (Map.Entry<Object, BigDecimal> entry : limitMap.entrySet()) {
+            Object key = entry.getKey();
+            BigDecimal curVal = accumulate.getOrDefault(key, BigDecimal.ZERO);
+            if (!item.containsKey(key)) continue;
+            BigDecimal itemVal = determineObjDecimalVal(item.get(key));
+            accumulate.put(key, curVal.subtract(itemVal));
         }
     }
 
@@ -87,5 +115,22 @@ public abstract class AbstractLoadData {
         }
         assert data.size() == listData.size();
         return data;
+    }
+
+    protected static BigDecimal min(BigDecimal b1, BigDecimal b2) {
+        return compareObj(b1, b2)  < 0 ? b1 : b2;
+    }
+
+    protected static BigDecimal max(BigDecimal b1, BigDecimal b2) {
+        return compareObj(b1, b2) < 0 ? b2 : b1;
+    }
+
+    protected static <T extends Comparable<T>> int compareObj(T o1, T o2) {
+        if (o1 == null && o2 == null) {
+            return 0;
+        }
+        if (o1 == null) return 1;
+        if (o2 == null) return -1;
+        return o1.compareTo(o2);
     }
 }

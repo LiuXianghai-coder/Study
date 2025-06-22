@@ -1,8 +1,6 @@
 package com.example.binpacking.algotrithmn;
 
-import com.example.binpacking.algorithmn.AbstractLoadData;
-import com.example.binpacking.algorithmn.FirstFit;
-import com.example.binpacking.algorithmn.NextFitDecrease;
+import com.example.binpacking.algorithmn.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,10 +37,13 @@ public class CompareTest
     @Test
     public void firstFitTest() {
         FirstFit firstFit = new FirstFit();
-        List<List<Map<Object, Object>>> groupList = firstFit.firstFit(limitMap);
+        Map<Object, BigDecimal> ffLimitMap = new HashMap<>();
+        ffLimitMap.put("weight", BigDecimal.valueOf(100));
+        List<List<Map<Object, Object>>> groupList = firstFit.firstFit(ffLimitMap);
         for (List<Map<Object, Object>> group : groupList) {
             Assertions.assertTrue(check(group));
         }
+        Assertions.assertEquals(loadShipLabelData().size(), itemSum(groupList));
         log.info("First Fit group cnt: {}", groupList.size());
     }
 
@@ -63,11 +64,39 @@ public class CompareTest
                 return Double.compare((Double) o1.get("weight"), (Double) o2.get("weight"));
             }
         };
-        List<List<Map<Object, Object>>> groupList = nfdh.nextFitDecrease(comp, limitMap);
+        Map<Object, BigDecimal> nfdhLimitMap = new HashMap<>();
+        nfdhLimitMap.put("weight", BigDecimal.valueOf(100));
+        List<List<Map<Object, Object>>> groupList = nfdh.nextFitDecrease(comp, nfdhLimitMap);
         for (List<Map<Object, Object>> group : groupList) {
             Assertions.assertTrue(check(group));
         }
+        Assertions.assertEquals(loadShipLabelData().size(), itemSum(groupList));
         log.info("Nfdh group cnt: {}", groupList.size());
+    }
+
+    @Test
+    public void compressDpTest() {
+        CompressDP compressDP = new CompressDP();
+        Map<Object, BigDecimal> dpLimitMap = new HashMap<>();
+        dpLimitMap.put("weight", BigDecimal.valueOf(100));
+        List<List<Map<Object, Object>>> groupedList = compressDP.dp(dpLimitMap);
+        for (List<Map<Object, Object>> group : groupedList) {
+            Assertions.assertTrue(check(group));
+        }
+        log.info("{}", groupedList);
+    }
+
+    @Test
+    public void aEpsilonTest() {
+        AEpsilon aEpsilon = new AEpsilon();
+        Map<Object, BigDecimal> epsilonLimitMap = new HashMap<>();
+        epsilonLimitMap.put("weight", BigDecimal.valueOf(100));
+        List<List<Map<Object, Object>>> groupList = aEpsilon.aEpsilon(new BigDecimal("0.999"), epsilonLimitMap);
+        for (List<Map<Object, Object>> group : groupList) {
+            Assertions.assertTrue(check(group));
+        }
+        Assertions.assertEquals(loadShipLabelData().size(), itemSum(groupList));
+        log.info("AEpsilon group cnt: {}", groupList.size());
     }
 
     protected boolean check(List<Map<Object, Object>> dataList) {
@@ -83,5 +112,13 @@ public class CompareTest
             }
         }
         return true;
+    }
+
+    protected int itemSum(List<List<Map<Object, Object>>> dataList) {
+        int ans = 0;
+        for (List<Map<Object, Object>> groupData : dataList) {
+            ans += groupData.size();
+        }
+        return ans;
     }
 }

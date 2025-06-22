@@ -1,0 +1,62 @@
+[
+  {
+    "orderId": "ORD-20250526-uVr3kL",
+    "origin": "上海",
+    "destination": "南京",
+    "weight": 12.07,
+    "length": 165.62,
+    "width": 139.81,
+    "height": 70.46,
+    "value": 3338.71
+  },
+  {
+    "orderId": "ORD-20250526-k7nzDa",
+    "origin": "福州",
+    "destination": "武汉",
+    "weight": 93.48,
+    "length": 158.51,
+    "width": 143.69,
+    "height": 69.46,
+    "value": 5153.0
+  },
+  {
+    "orderId": "ORD-20250526-XG18fq",
+    "origin": "厦门",
+    "destination": "长沙",
+    "weight": 95.72,
+    "length": 176.31,
+    "width": 117.1,
+    "height": 41.92,
+    "value": 273.78
+  },
+  {
+    "orderId": "ORD-20250526-KBry95",
+    "origin": "天津",
+    "destination": "西安",
+    "weight": 93.91,
+    "length": 72.48,
+    "width": 36.61,
+    "height": 21.89,
+    "value": 3049.33
+  },
+  {
+    "orderId": "ORD-20250526-yM4qkV",
+    "origin": "宁波",
+    "destination": "无锡",
+    "weight": 29.94,
+    "length": 62.79,
+    "width": 100.32,
+    "height": 22.32,
+    "value": 9262.15
+  },
+  {
+    "orderId": "ORD-20250526-repOV8",
+    "origin": "成都",
+    "destination": "厦门",
+    "weight": 9.62,
+    "length": 164.61,
+    "width": 23.87,
+    "height": 43.35,
+    "value": 5407.56
+  }
+]
